@@ -7,9 +7,7 @@
 
 #include "../play_lib/uthash/uthash.h"
 
-/*
- * play_string.c
- */
+/* play_string.c */
 typedef struct {
     int len;
     int size;
@@ -23,9 +21,7 @@ int play_string_reset(play_string *string);
 int play_string_free(play_string *string);
 
 
-/**
- * play_global_config.c
- */
+/* play_global_config.c */
 typedef struct {
     char app_root[512];
     char app_root_ex[512];
@@ -53,9 +49,7 @@ int play_global_config_set_process_id(int process_id);
 char *play_global_config_error_message(int errcode);
 
 
-/*
- * play_manager_action.c
- */
+/* play_manager_action.c */
 typedef struct _processor {
     play_string *rcstring;
     play_string *name;
@@ -97,10 +91,7 @@ typedef struct {
 play_action *play_manager_action_get_by_chars(char *name, int checknew);
 play_action_hashtable *play_manager_action_get_list_by_path(char *path);
 
-
-/**
- * play_manager_meta.c
- */
+/* play_manager_meta.c */
 typedef struct _play_meta_field{
     play_string *name;
     play_string *funcName;
@@ -141,9 +132,7 @@ play_meta_hashtable* play_manager_meta_get_list_by_path(char *path);
 
 
 
-/*
- * tool.c method
- */
+/* tool.c method */
 int play_is_int(char *str);
 int play_explode(char ***dest, const char *src, const char delim);
 int play_is_numeric(char *str);
