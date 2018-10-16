@@ -32,7 +32,7 @@ void play_interface_utils_append_crontab_mutex_file(char *lock_file)
 {
     if (lock_file_array == NULL) {
         utarray_new(lock_file_array, &ut_str_icd);
-        utarray_push_back(lock_file_array, lock_file);
+        utarray_push_back(lock_file_array, &lock_file);
     } else {
         int find = 0;
         char **p = NULL;
@@ -42,10 +42,9 @@ void play_interface_utils_append_crontab_mutex_file(char *lock_file)
             }
         }
         if (!find) {
-            utarray_push_back(lock_file_array, lock_file);
+            utarray_push_back(lock_file_array, &lock_file);
         }
     }
-
 }
 
 void play_interface_utils_clean_crontab_mutex_file()
@@ -54,7 +53,7 @@ void play_interface_utils_clean_crontab_mutex_file()
         char **p = NULL;
         while ( (p = (char **)utarray_next(lock_file_array, p))) {
             remove(*p);
-            free(*p);
+            // free(*p);
         }
         utarray_free(lock_file_array);
     }

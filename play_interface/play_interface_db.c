@@ -89,7 +89,7 @@ PHP_METHOD(DB, __callStatic)
     add_assoc_null_ex(&_key, "default", 7);
     add_assoc_stringl_ex(&_key, "funcName", 8, meta->key->funcName->val, meta->key->funcName->len);
     add_assoc_zval_ex(_property, meta->key->name->val, meta->key->name->len, &_key);
-    zend_update_property_stringl(play_interface_query_ce, return_value, meta->key->name->val, meta->key->name->len, meta->key->name->val, meta->key->name->len);
+    zend_update_property_stringl(play_interface_query_ce, return_value, meta->key->funcName->val, meta->key->funcName->len, meta->key->name->val, meta->key->name->len);
 
     play_meta_field *field = meta->fields;
     while (field) {
@@ -99,7 +99,7 @@ PHP_METHOD(DB, __callStatic)
         add_assoc_stringl_ex(&_field, "default", 7, field->defv->val, field->defv->len);
         add_assoc_stringl_ex(&_field, "funcName", 8, field->funcName->val, field->funcName->len);
         add_assoc_zval_ex(_property, field->name->val, field->name->len, &_field);
-        zend_update_property_stringl(play_interface_query_ce, return_value, field->name->val, field->name->len, field->name->val, field->name->len);
+        zend_update_property_stringl(play_interface_query_ce, return_value, field->funcName->val, field->funcName->len, field->name->val, field->name->len);
         field = field->next;
     }
 

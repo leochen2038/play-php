@@ -120,20 +120,33 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         if (play_interface_query_check_field_type(obj, field, arg)) {
             zval data;
             ZVAL_ZVAL(&data, arg, 1, 0);
-            zval *_property = zend_read_property(play_interface_query_ce, obj, "field", 5, 0, NULL);
-            add_assoc_zval_ex(_property, field->val, field->len, &data);
+            zval *_property = zend_read_property(play_interface_query_ce, obj, "field", 5, 1, NULL);
+
+            zval *zfn = NULL;
+            if ((zfn = zend_read_property(play_interface_query_ce, obj, field->val, field->len, 1, NULL)) == NULL) {
+                zval *metaName = zend_read_property(Z_OBJCE_P(obj), obj, "metaName", 8, 1, NULL);
+                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not find field %s in meta %s", field->val, Z_STRVAL_P(metaName));
+                return 0;
+            }
+            add_assoc_zval_ex(_property,  Z_STRVAL_P(zfn), Z_STRLEN_P(zfn), &data);
         }
         return obj;
     } else if (memcmp(action->val, "where", 5) == 0) {
         zval *keyptr;
-        zval *_property = zend_read_property(play_interface_query_ce, obj, "where", 5, 0, NULL);
-        if (condition->len > 0 && zend_read_property(play_interface_query_ce, obj, field->val, field->len, 1, NULL) != NULL ) {
+        zval *zfn = NULL;
+        if ((zfn = zend_read_property(play_interface_query_ce, obj, field->val, field->len, 1, NULL)) == NULL) {
+            zval *metaName = zend_read_property(Z_OBJCE_P(obj), obj, "metaName", 8, 1, NULL);
+            play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not find field %s in meta %s", field->val, Z_STRVAL_P(metaName));
+            return 0;
+        }
+        zval *_property = zend_read_property(play_interface_query_ce, obj, "where", 5, 1, NULL);
+        if (condition->len > 0 && zend_read_property(play_interface_query_ce, obj, Z_STRVAL_P(zfn), Z_STRLEN_P(zfn), 1, NULL) != NULL ) {
             zval data;
             ZVAL_ZVAL(&data, arg, 1, 0);
-            if ((keyptr = zend_hash_str_find(Z_ARRVAL_P(_property), field->val, field->len)) == NULL) {
+            if ((keyptr = zend_hash_str_find(Z_ARRVAL_P(_property), Z_STRVAL_P(zfn), Z_STRLEN_P(zfn))) == NULL) {
                 zval key;
                 array_init(&key);
-                add_assoc_zval_ex(_property, field->val, field->len, &key);
+                add_assoc_zval_ex(_property, Z_STRVAL_P(zfn), Z_STRLEN_P(zfn), &key);
                 add_assoc_zval_ex(&key, condition->val, condition->len, &data);
             } else {
                 add_assoc_zval_ex(keyptr, condition->val, condition->len, &data);
@@ -141,15 +154,21 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         }
         return obj;
     } else if (action->len == 2 && memcmp(action->val, "or", 2) == 0) {
-        zval *keyptr;
-        zval *_property = zend_read_property(play_interface_query_ce, obj, "or", 2, 0, NULL);
-        if (condition->len > 0 && zend_read_property(play_interface_query_ce, obj, field->val, field->len, 1, NULL) != NULL ) {
+        zval *keyptr = NULL;
+        zval *zfn = NULL;
+        if ((zfn = zend_read_property(play_interface_query_ce, obj, field->val, field->len, 1, NULL)) == NULL) {
+            zval *metaName = zend_read_property(Z_OBJCE_P(obj), obj, "metaName", 8, 1, NULL);
+            play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not find field %s in meta %s", field->val, Z_STRVAL_P(metaName));
+            return 0;
+        }
+        zval *_property = zend_read_property(play_interface_query_ce, obj, "or", 2, 1, NULL);
+        if (condition->len > 0 && zend_read_property(play_interface_query_ce, obj, Z_STRVAL_P(zfn), Z_STRLEN_P(zfn), 1, NULL) != NULL ) {
             zval data;
             ZVAL_ZVAL(&data, arg, 1, 0);
-            if ((keyptr = zend_hash_str_find(Z_ARRVAL_P(_property), field->val, field->len)) == NULL) {
+            if ((keyptr = zend_hash_str_find(Z_ARRVAL_P(_property), Z_STRVAL_P(zfn), Z_STRLEN_P(zfn))) == NULL) {
                 zval key;
                 array_init(&key);
-                add_assoc_zval_ex(_property, field->val, field->len, &key);
+                add_assoc_zval_ex(_property, Z_STRVAL_P(zfn), Z_STRLEN_P(zfn), &key);
                 add_assoc_zval_ex(&key, condition->val, condition->len, &data);
             } else {
                 add_assoc_zval_ex(keyptr, condition->val, condition->len, &data);
@@ -158,7 +177,7 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         return obj;
     } else if (memcmp(action->val, "getList", 7) == 0) {
         zend_update_property(play_interface_query_ce, obj, "select", 6, arg);
-        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 0, NULL);
+        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
         if (Z_TYPE_P(router) == IS_STRING) {
             run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "getlist", retval, 1, obj, NULL);
         } else {
@@ -167,7 +186,7 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         play_interface_query_clean_property(obj);
         return retval;
     } else if (memcmp(action->val, "update", 6) == 0) {
-        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 0, NULL);
+        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
         if (Z_TYPE_P(router) == IS_STRING) {
             run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "getlist", retval, 1, obj, NULL);
         } else {
@@ -176,7 +195,7 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         play_interface_query_clean_property(obj);
         return retval;
     } else if (memcmp(action->val, "delete", 6) == 0) {
-        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 0, NULL);
+        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
         if (Z_TYPE_P(router) == IS_STRING) {
             run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "delete", retval, 1, obj, NULL);
         } else {
@@ -185,7 +204,7 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         play_interface_query_clean_property(obj);
         return retval;
     } else if (memcmp(action->val, "count", 5) == 0) {
-        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 0, NULL);
+        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
         if (Z_TYPE_P(router) == IS_STRING) {
             run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "count", retval, 1, obj, NULL);
         } else {
@@ -194,7 +213,7 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         play_interface_query_clean_property(obj);
         return retval;
     } else if (memcmp(action->val, "insert", 6) == 0) {
-        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 0, NULL);
+        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
         if (Z_TYPE_P(router) == IS_STRING) {
             run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "insert", retval, 1, obj, NULL);
         } else {
@@ -203,7 +222,7 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         play_interface_query_clean_property(obj);
         return retval;
     } else if (memcmp(action->val, "getOne", 6) == 0) {
-        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 0, NULL);
+        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
         if (Z_TYPE_P(router) == IS_STRING) {
             run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "getone", retval, 1, obj, NULL);
         } else {
@@ -220,7 +239,7 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
     } else {
         char funName[action->len];
         play_str_tolower_copy(funName, action->val, action->len);
-        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 0, NULL);
+        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
         if (Z_TYPE_P(router) == IS_STRING) {
             run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), funName, retval, 2, obj, arg);
         } else {
@@ -267,7 +286,7 @@ int php_interface_query_parse_method(const char *method, int len, play_string *a
         return 0;
     }
 
-    field->len =conditionIndex - actionIndex - 1;
+    field->len = conditionIndex - actionIndex - 1;
 
     if (field->len < 1) {
         field->len = condition->len;
@@ -355,17 +374,24 @@ static int play_interface_query_check_field_array_zvtype(int z_type, play_string
  */
 static int play_interface_query_check_field_type(zval *obj, play_string *field, zval* args)
 {
+    zval *zfn = NULL;
     zval *f_item = NULL;
     zval *t_item = NULL;
     zval *arg_1 = NULL;
     zval *arg_2 = NULL;
 
-    zval *_fields = zend_read_property(play_interface_query_ce, obj, "fields", 6, 0, NULL);
-    if ((f_item = zend_hash_str_find(Z_ARRVAL_P(_fields), field->val, field->len)) == NULL) {
+    if ((zfn = zend_read_property(play_interface_query_ce, obj, field->val, field->len, 1, NULL)) == NULL) {
         zval *metaName = zend_read_property(Z_OBJCE_P(obj), obj, "metaName", 8, 1, NULL);
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not find field %s in meta %s", field->val, Z_STRVAL_P(metaName));
         return 0;
     }
+    zval *_fields = zend_read_property(play_interface_query_ce, obj, "fields", 6, 0, NULL);
+    if ((f_item = zend_hash_str_find(Z_ARRVAL_P(_fields), Z_STRVAL_P(zfn), Z_STRLEN_P(zfn))) == NULL) {
+        zval *metaName = zend_read_property(Z_OBJCE_P(obj), obj, "metaName", 8, 1, NULL);
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not find field %s in meta %s", field->val, Z_STRVAL_P(metaName));
+        return 0;
+    }
+
     if ((t_item = zend_hash_str_find(Z_ARRVAL_P(f_item), "type", 4)) == NULL) {
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not find %s type in meta", field->val);
         return 0;

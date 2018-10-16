@@ -122,8 +122,9 @@ PHP_METHOD(Play, crontab)
         _mutex = zend_read_property(ce, &obj, "_mutex", 6, 0, NULL);
         _es = zend_read_property(ce, &obj, "_es", 3, 0, NULL);
 
-        // step 4. 判断定时任务时间是否符合
+        pid_t  parent_pid = getpid();
         if (Z_TYPE_P(_hit) == IS_TRUE) {
+            // step 4. 判断定时任务时间是否符合
             if (Z_LVAL_P(_es) > 0 ) {
                 play_interface_play_crontab_run_second_level(lower_class_name, Z_LVAL_P(_es), &obj, ce);
             } else {
@@ -132,6 +133,9 @@ PHP_METHOD(Play, crontab)
         }
         efree(lower_class_name);
         zval_ptr_dtor(&obj);
+        if (parent_pid != getpid()) {
+            break; // 子进程提出循环
+        }
     }
     int status;
     wait(&status);

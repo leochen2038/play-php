@@ -47,6 +47,7 @@ void play_interface_crontab_register(int _module_number)
     zend_declare_property_stringl(play_interface_crontab_ce, "_crontab", 8, NULL, 0, ZEND_ACC_PUBLIC);
     zend_declare_property_bool(play_interface_crontab_ce, "_hit", 4, 0, ZEND_ACC_PUBLIC);
     zend_declare_property_bool(play_interface_crontab_ce, "_mutex", 6, 0, ZEND_ACC_PUBLIC);
+    zend_declare_property_bool(play_interface_crontab_ce, "_es", 3, 0, ZEND_ACC_PRIVATE|ZEND_ACC_CTOR);
 }
 
 PHP_METHOD(Crontab, setMutex)

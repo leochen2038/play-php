@@ -31,7 +31,7 @@ void play_interface_play_crontab_run_second_level(char *lower_class_name, long e
                     play_interface_utils_append_crontab_mutex_file(lock_mutex_file);
                     zend_call_method_with_0_params(obj, ce, NULL, "run", NULL);
                     wait(&status);
-                    zval_ptr_dtor(obj);
+                    zval_ptr_dtor(&obj);
                     // remove(lock_mutex_file);
                     exit(0);
                 }
@@ -42,6 +42,7 @@ void play_interface_play_crontab_run_second_level(char *lower_class_name, long e
     }
 }
 
+
 void play_interface_play_crontab_run_normal_level(char *lower_class_name, long mutex, zval *obj, zend_class_entry *ce)
 {
     char *lock_mutex_file = malloc(512);
@@ -49,6 +50,7 @@ void play_interface_play_crontab_run_normal_level(char *lower_class_name, long m
 
     if (mutex == 1) {
         if (access(lock_mutex_file, F_OK) == 0) {
+            php_printf("find lock file in %s!\n", lower_class_name);
             return;
         }
         fopen(lock_mutex_file, "a+");
@@ -63,10 +65,5 @@ void play_interface_play_crontab_run_normal_level(char *lower_class_name, long m
             play_interface_utils_append_crontab_mutex_file(lock_mutex_file);
         }
         zend_call_method_with_0_params(obj, ce, NULL, "run", NULL);
-        int status;
-        wait(&status);
-        zval_ptr_dtor(obj);
-        // remove(lock_mutex_file);
-        // exit(0);
     }
 }
