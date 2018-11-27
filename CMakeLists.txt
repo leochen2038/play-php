@@ -22,7 +22,8 @@ set(PHPEXT_SOURCE_FILES
         play_interface/play_interface_processor.c
         play_interface/play_interface_query.c
         play_interface/play_interface_render_abstract.c
-        play_interface/play_interface_utils.c)
+        play_interface/play_interface_utils.c
+        play_interface/play_interface_net.c)
 set(SOURCE_FILES
         main.c
         play_core/play_string.c
@@ -30,9 +31,11 @@ set(SOURCE_FILES
         play_core/play_manager_action.c
         play_core/play_global_config.c
         play_core/play_manager_meta.c
-        )
+        play_core/play_socket.c)
 
+set (Test main.c)
 
+add_executable(test ${Test})
 add_executable(play ${PHPEXT_SOURCE_FILES})
 add_executable(run_play ${SOURCE_FILES})
 target_link_libraries(run_play libxml2.dylib)

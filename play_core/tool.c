@@ -15,6 +15,14 @@
 #include <zconf.h>
 #include <sys/time.h>
 
+//typedef struct _play_hitem_project_path {
+//    char path[128];
+//    char *play_string;
+//    UT_hash_handle hh;
+//}play_hitem_project_path;
+//static play_hitem_project_path *__play_project_path_hashtable = NULL;
+
+
 static const unsigned char tolower_map[256] = {
         0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
         0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
@@ -54,8 +62,15 @@ void play_str_tolower_copy(char *dest, const char *source, int length)
  * @param path
  * @return play_string*
  */
-play_string *play_find_project_root_by_path(const char *path)
+play_string *play_find_project_root_by_path(const char *path, int cache)
 {
+//    play_hitem_project_path *item = NULL;
+//    if (cache == 1) {
+//        HASH_FIND_STR(__play_project_path_hashtable, path, item);
+//        if (item != NULL) {
+//            return item->play_string;
+//        }
+//    }
     int path_len = strlen(path);
     char play_file[1024];
     sprintf(play_file, "%s/.play", path);
@@ -129,20 +144,8 @@ int play_is_numeric(char *str)
     return 1;
 }
 
-int play_is_int(char *str)
-{
-    int i;
-    size_t length = strlen(str);
-    if (length == 0) return 0;
-    for (i = 0; i < length; ++i) {
-        if(!isdigit(str[i])) {
-            return 0;
-        }
-    }
-    return 1;
-}
 
-void play_get_micro_uqid(char *muqid, char *hexip, char *hexpid)
+void play_get_micro_uqid(char *muqid, char *hexip, int pid)
 {
     struct timeval tval;
     time_t timep;
@@ -152,7 +155,5 @@ void play_get_micro_uqid(char *muqid, char *hexip, char *hexpid)
     gettimeofday(&tval, NULL);
 
     p = localtime(&timep);
-    if (hexip != NULL && hexpid != NULL) {
-        sprintf(muqid, "%04d%02d%02d%02d%02d%02d%06d%s%s\n", (1900 + p->tm_year), (p->tm_mon + 1), p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tval.tv_usec, hexip, hexpid);
-    }
+    snprintf(muqid, 32, "%04d%02d%02d%02d%02d%02d%06d%s%04x\n", (1900 + p->tm_year), (p->tm_mon + 1), p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tval.tv_usec, hexip, pid%0x10000);
 }

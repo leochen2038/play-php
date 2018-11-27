@@ -66,6 +66,7 @@ if test "$PHP_PLAY" != "no"; then
         play_core/play_manager_action.c \
         play_core/play_global_config.c \
         play_core/play_manager_meta.c \
+        play_core/play_socket.c \
         play_interface/play_interface_action.c \
         play_interface/play_interface_context.c \
         play_interface/play_interface_crontab.c \
@@ -80,6 +81,7 @@ if test "$PHP_PLAY" != "no"; then
         play_interface/play_interface_processor.c \
         play_interface/play_interface_query.c \
         play_interface/play_interface_render_abstract.c \
+        play_interface/play_interface_net.c \
         play_interface/play_interface_utils.c,
     $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 

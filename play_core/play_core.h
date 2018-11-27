@@ -32,10 +32,6 @@ typedef struct {
     char server_root[512];
     int server_root_length;
     int action_root_length;
-    char local_ip[16];
-    char local_ip_hex[9];
-    int  process_id;
-    char process_id_hex[5];
     char class_service_path[512];
     int class_service_path_length;
 }global_config;
@@ -44,8 +40,6 @@ extern global_config gconfig;
 
 void play_gloabl_config_init();
 int play_global_config_set_app_root(const char *app_root, int app_root_leng);
-int play_global_config_set_local_ip(const char *local_ip, int local_ip_leng);
-int play_global_config_set_process_id(int process_id);
 char *play_global_config_error_message(int errcode);
 
 
@@ -133,11 +127,30 @@ play_meta_hashtable* play_manager_meta_get_list_by_path(char *path);
 
 
 /* tool.c method */
-int play_is_int(char *str);
 int play_explode(char ***dest, const char *src, const char delim);
 int play_is_numeric(char *str);
-void play_get_micro_uqid(char *muqid, char *hexip, char *hexpid);
+void play_get_micro_uqid(char *muqid, char *hexip, int pid);
 void play_str_tolower_copy(char *dest, const char *source, int length);
-play_string *play_find_project_root_by_path(const char *path);
+play_string *play_find_project_root_by_path(const char *path, int cache);
+
+
+/* play_socket */
+typedef struct {
+    char ipv4[21];
+    int socket_fd;
+    char local_ip_hex[9];
+    char *read_buf;
+    int state;                      /* 状态,0,正常可用，1：关闭*/
+    unsigned int read_buf_ncount;   /* 需要读取的字节数 */
+    unsigned int read_buf_rcount;   /* 实际读取的字节数 */
+    UT_hash_handle hh;
+} play_socket_ctx;
+
+size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx);
+size_t play_socket_send_with_protocol_v1(play_socket_ctx *sctx, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
+play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time);
+size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char *recv);
+void play_socket_cleanup_with_protocol(play_socket_ctx *sctx);
+
 
 #endif //PROJECT_PLAY_CORE_H

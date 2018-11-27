@@ -1,10 +1,43 @@
 #include <string.h>  /* strcpy */
 #include <stdlib.h>  /* malloc */
 #include <stdio.h>   /* printf */
+#include <zconf.h>
 #include "play_lib/uthash/uthash.h"
 #include "play_core/play_core.h"
 #include "play_lib/uthash/utarray.h"
 
+
+int bar(int n)
+{
+    if(n<2)return n;
+    return bar(n-1)+bar(n-2);
+}
+
+void aynsc_print(const char *s)
+{
+    pid_t fpid;
+    fpid = fork();
+    if (fpid == 0) {
+        printf("%s", s);
+    }
+}
+
+int main()
+{
+    int a = 65537;
+    printf("%04x\n", a%0x10000);
+//    int size = 8+3;
+//    int len = 3;
+//    char senddata[size];
+//    memcpy(senddata, "==>>", 4);
+//    memcpy(senddata+4, len, 4);
+//    printf("%s\n", senddata);
+//    for (int i = 0; i < 3; ++i) {
+//        aynsc_print("s");
+//    }
+//    int status;
+//    wait(&status);
+}
 
 //struct my_struct {
 //    const char *name;          /* key */
@@ -94,19 +127,19 @@
 //    return 0;
 //}
 
-int main()
+int main_()
 {
-    play_global_config_set_app_root("/Users/Leo/play7/soft", strlen("/Users/Leo/play7/soft"));
-    play_meta_hashtable *item2, *tmp2;
-    play_meta_hashtable *list = play_manager_meta_get_list_by_path("/Users/Leo/play7/soft/assets/meta");
-    int count = HASH_COUNT(list);
-    printf("there are %d meta\n", count);
-//
-    HASH_ITER(hh, list, item2, tmp2) {
-        printf("$items{%s} = %s\n", item2->name, item2->meta->name->val);
-    }
-    play_meta *meta = play_manager_meta_get_by_chars("Redis_Config", 1);
-    play_action *action1 = play_manager_action_get_by_chars("shop/goods/detail", 1);
+//    play_global_config_set_app_root("/Users/Leo/play7/soft", strlen("/Users/Leo/play7/soft"));
+//    play_meta_hashtable *item2, *tmp2;
+//    play_meta_hashtable *list = play_manager_meta_get_list_by_path("/Users/Leo/play7/soft/assets/meta");
+//    int count = HASH_COUNT(list);
+//    printf("there are %d meta\n", count);
+////
+//    HASH_ITER(hh, list, item2, tmp2) {
+//        printf("$items{%s} = %s\n", item2->name, item2->meta->name->val);
+//    }
+//    play_meta *meta = play_manager_meta_get_by_chars("Redis_Config", 1);
+//    play_action *action1 = play_manager_action_get_by_chars("shop/goods/detail", 1);
 
 
 //    play_global_config_set_app_root("/Users/Leo/play7/soft", strlen("/Users/Leo/play7/soft"));
@@ -114,7 +147,7 @@ int main()
 //    play_action *action = play_manager_action_get_by_chars("setting/bind", 1);
 //
 //
-//    return 0;
+    return 0;
 }
 
 

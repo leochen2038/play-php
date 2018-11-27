@@ -27,7 +27,6 @@ void play_interface_play_register(int _module_number)
     INIT_CLASS_ENTRY_EX(class, "Play", 4, play_interface_play_register_functions);
     play_interface_play_ce = zend_register_internal_class_ex(&class, NULL);
 
-
     zend_declare_property_bool(play_interface_play_ce, "auto", 4, 0, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
     zend_declare_property_null(play_interface_play_ce, "environment", 11, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
     zend_declare_property_stringl(play_interface_play_ce, "render", 6, "html", 4, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
@@ -60,7 +59,7 @@ PHP_METHOD(Play, reconst)
         return;
     }
     if (proj_name != NULL) {
-        play_string *root = play_find_project_root_by_path(Z_STRVAL_P(proj_name));
+        play_string *root = play_find_project_root_by_path(Z_STRVAL_P(proj_name), 0);
         if (root == NULL) {
             php_printf("can not find any play project in %s\n", proj_name);
             return;
