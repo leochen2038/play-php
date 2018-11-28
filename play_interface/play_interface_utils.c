@@ -114,7 +114,7 @@ int play_interface_utils_find_target_file(char *path, char *file_list[], int *fi
         if (ent->d_type == 8) {
             namelen = strlen(ent->d_name);
             if (namelen > 4 && memcmp(ent->d_name+(namelen - 4), ".php", 4) == 0 && memcmp(ent->d_name, target, strlen(target)) == 0) {
-                file_list[*file_list_count] = calloc(strlen(ent->d_name)+filepathlen+1, 1);
+                file_list[*file_list_count] = calloc(strlen(ent->d_name)+filepathlen+2, 1);
                 sprintf(file_list[*file_list_count], "%s/%s", path, ent->d_name);
                 (*file_list_count)++;
             }
