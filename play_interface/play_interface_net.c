@@ -8,11 +8,11 @@
 #include <stdio.h>
 #include <zend_interfaces.h>
 
-PHP_METHOD(Net, protocolsocket);
+PHP_METHOD(Net, socket_protocol);
 zend_class_entry *play_interface_net_ce;
 
 const zend_function_entry  play_interface_net_functions[] = {
-    PHP_ME(Net, protocolsocket, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(Net, socket_protocol, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     {NULL, NULL, NULL}
 };
 
@@ -24,7 +24,7 @@ void play_interface_net_register(int _module_number)
     play_interface_net_ce = zend_register_internal_class_ex(&class, NULL);
 }
 
-PHP_METHOD(Net, protocolsocket)
+PHP_METHOD(Net, socket_protocol)
 {
     char *host = NULL;
     char *message = NULL;

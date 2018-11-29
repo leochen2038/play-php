@@ -35,7 +35,7 @@ size_t play_socket_send_with_protocol_v1(play_socket_ctx *sctx, char *request_id
     ret = send(sctx->socket_fd, send_data, send_size, 0);
 
     if (ret != send_size) {
-        php_printf("send error\n");
+        // php_printf("send error\n");
         return ret;
     }
     return ret;
@@ -76,11 +76,11 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
                 size -= rcount;
             }
         } else if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
-            php_printf("\nwait\n");
+            // php_printf("\nwait\n");
             usleep(10);
         } else {
             // 读取错误
-            php_printf("read error\n");
+            // php_printf("read error\n");
         }
     }
 }
@@ -92,7 +92,7 @@ size_t play_socket_send(int socket_fd, const char *data, size_t len)
     size_t ret;
     ret = send(socket_fd, data, len, 0);
     if (ret != len) {
-        php_printf("send error\n");
+        // php_printf("send error\n");
         return ret;
     }
     return ret;
@@ -106,9 +106,9 @@ size_t play_socket_recv(int socket_fd, char *recvdata)
         // php_printf("recv:%s\n",recvdata);
     }
     if (ret == 0) {
-        php_printf("连接断开");
+        // php_printf("连接断开");
     } else {
-        php_printf("服务超时");
+        // php_printf("服务超时");
     }
     return ret;
 }
@@ -117,7 +117,7 @@ size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char 
 {
     size_t ret = 0;
     ret = play_socket_send(socket_fd, send, sendlen);
-    php_printf("send ret:%ld\n", ret);
+    // php_printf("send ret:%ld\n", ret);
     if (ret == sendlen) {
         ret = play_socket_recv(socket_fd, recv);
         php_printf("recv ret:%ld\n", ret);
