@@ -73,9 +73,17 @@ PHP_METHOD(Query, __call)
     play_string *field = play_string_new_with_size(63);
     play_string *condition = play_string_new_with_size(63);
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "zz", &method, &arg) == FAILURE) {
         return;;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_ZVAL(method)
+        Z_PARAM_ZVAL(arg)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     int i;
     if ( (i = php_interface_query_parse_method(Z_STRVAL_P(method), Z_STRLEN_P(method), action, field, condition)) == 0) {
         play_interface_utils_trigger_exception(0x00, "Call to undefined method Query::%s()", Z_STRVAL_P(method));

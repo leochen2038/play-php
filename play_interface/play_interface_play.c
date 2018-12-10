@@ -42,9 +42,18 @@ int play_interface_play_checknew()
 PHP_METHOD(Play, init)
 {
     zval *proj_name = NULL;
+
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &proj_name) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(proj_name)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     if (proj_name != NULL) {
         play_interface_play_init(Z_STRVAL_P(proj_name));
     } else {
@@ -55,9 +64,18 @@ PHP_METHOD(Play, init)
 PHP_METHOD(Play, reconst)
 {
     zval *proj_name = NULL;
+
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &proj_name) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(proj_name)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     if (proj_name != NULL) {
         play_string *root = play_find_project_root_by_path(Z_STRVAL_P(proj_name), 0);
         if (root == NULL) {
@@ -73,9 +91,17 @@ PHP_METHOD(Play, reconst)
 PHP_METHOD(Play, crontab)
 {
     zval *root_path;
+
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &root_path) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_ZVAL(root_path)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     time_t timep;
     time(&timep);
     play_global_config_set_app_root(Z_STRVAL_P(root_path), Z_STRLEN_P(root_path));

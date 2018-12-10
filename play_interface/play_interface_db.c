@@ -33,9 +33,16 @@ PHP_METHOD(DB, __callStatic)
     zval *arg;
     zend_class_entry *ce = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "zz", &method, &arg) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_ZVAL(method)
+        Z_PARAM_ZVAL(arg)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
 
     int checknew = play_interface_play_checknew();
     play_meta *meta = play_manager_meta_get_by_chars(Z_STRVAL_P(method)+4, checknew);

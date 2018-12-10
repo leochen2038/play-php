@@ -53,9 +53,18 @@ void play_interface_crontab_register(int _module_number)
 PHP_METHOD(Crontab, setMutex)
 {
     zval *mutex = NULL;
+
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &mutex) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(mutex)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     if (mutex != NULL) {
         zend_update_property_bool(Z_OBJCE_P(getThis()), getThis(), "_mutex", 6, Z_LVAL_P(mutex));
     }
@@ -78,9 +87,18 @@ PHP_METHOD(Crontab, checkHit)
 PHP_METHOD(Crontab, fork)
 {
     zval *method, *args;
+
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zz", &method, &args) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 2)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(method)
+        Z_PARAM_ZVAL(args)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
 
     pid_t fpid;
     fpid = fork();
@@ -100,9 +118,18 @@ PHP_METHOD(Crontab, everySeconds)
     zval *es;
     zval *mutex = NULL;
     zval *crontab = NULL;
+
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "z|z", &es, &mutex) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_ZVAL(es)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(mutex)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
 
     crontab = zend_read_property(Z_OBJCE_P(getThis()), getThis(), "_crontab", 8, 0, NULL);
     if (crontab == NULL || Z_STRLEN_P(crontab) == 0) {
@@ -125,9 +152,16 @@ PHP_METHOD(Crontab, setCrontab)
     int hit = 0;
     zval *crontab_str = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &crontab_str) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+    Z_PARAM_OPTIONAL
+    Z_PARAM_ZVAL(crontab_str)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
 
     //step 1. 获取当前时间戳
     time_t timep;
@@ -167,9 +201,18 @@ PHP_METHOD(Crontab, debug)
     zend_class_entry *ce;
     zval *app_root, *class_name, obj;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zz", &app_root, &class_name) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 2)
+    Z_PARAM_OPTIONAL
+    Z_PARAM_ZVAL(app_root)
+    Z_PARAM_ZVAL(class_name)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     time_t timep;
     time(&timep);
     play_global_config_set_app_root(Z_STRVAL_P(app_root), Z_STRLEN_P(app_root));

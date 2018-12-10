@@ -37,9 +37,18 @@ PHP_METHOD(Input, getInRequest)
     zval *defaultVal = NULL;
     zval *val = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zzz", &key, &regex, &defaultVal) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 3)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(key)
+        Z_PARAM_ZVAL(regex)
+        Z_PARAM_ZVAL(defaultVal)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
 
     if (key == NULL) {
         RETURN_ZVAL(&PG(http_globals)[TRACK_VARS_REQUEST], 1, 0);
@@ -64,9 +73,19 @@ PHP_METHOD(Input, getInGet)
     zval *defaultVal = NULL;
     zval *val = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zzz", &key, &regex, &defaultVal) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 3)
+            Z_PARAM_OPTIONAL
+            Z_PARAM_ZVAL(key)
+            Z_PARAM_ZVAL(regex)
+            Z_PARAM_ZVAL(defaultVal)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     if (key == NULL) {
         RETURN_ZVAL(&PG(http_globals)[TRACK_VARS_GET], 1, 0);
     }
@@ -90,9 +109,19 @@ PHP_METHOD(Input, getInPost)
     zval *defaultVal = NULL;
     zval *val = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zzz", &key, &regex, &defaultVal) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 3)
+            Z_PARAM_OPTIONAL
+            Z_PARAM_ZVAL(key)
+            Z_PARAM_ZVAL(regex)
+            Z_PARAM_ZVAL(defaultVal)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     if (key == NULL) {
         RETURN_ZVAL(&PG(http_globals)[TRACK_VARS_POST], 1, 0);
     }
@@ -116,9 +145,19 @@ PHP_METHOD(Input, getInCookie)
     zval *defaultVal = NULL;
     zval *val = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zzz", &key, &regex, &defaultVal) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 3)
+            Z_PARAM_OPTIONAL
+            Z_PARAM_ZVAL(key)
+            Z_PARAM_ZVAL(regex)
+            Z_PARAM_ZVAL(defaultVal)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     if (key == NULL) {
         RETURN_ZVAL(&PG(http_globals)[TRACK_VARS_COOKIE], 1, 0);
     }
@@ -145,9 +184,19 @@ PHP_METHOD(Input, getInHeader)
     zval *val = NULL;
     zval upper_key;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zzz", &key, &regex, &defaultVal) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 3)
+            Z_PARAM_OPTIONAL
+            Z_PARAM_ZVAL(key)
+            Z_PARAM_ZVAL(regex)
+            Z_PARAM_ZVAL(defaultVal)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+
     if (key == NULL) {
         RETURN_ZVAL(&PG(http_globals)[TRACK_VARS_SERVER], 1, 0);
     }
@@ -207,4 +256,3 @@ static zval *play_interface_input_get_param(zval *track, zval *key, zval *defaul
     }
     return val;
 }
-

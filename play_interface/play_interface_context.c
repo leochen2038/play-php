@@ -28,9 +28,16 @@ PHP_METHOD(Context, get)
     zval *key = NULL;
     zval *val = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z", &key) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ZVAL(key)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
 
     zval *_data = zend_read_static_property(play_interface_context_ce, "_data", 5, 0);
     if (Z_TYPE_P(_data) == IS_NULL) {
@@ -56,10 +63,17 @@ PHP_METHOD(Context, set)
     zval *key = NULL;
     zval *val = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "zz", &key, &val) == FAILURE) {
         return;
     }
-
+#else
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+        Z_PARAM_ZVAL(key)
+        Z_PARAM_ZVAL(val)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
+    
     zval *_data = zend_read_static_property(play_interface_context_ce, "_data", 5, 0);
     if (Z_TYPE_P(_data) != IS_ARRAY) {
         array_init(_data);

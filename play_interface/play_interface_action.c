@@ -46,9 +46,16 @@ PHP_METHOD(Action, boot)
     play_string *render = NULL;
     play_action *action = NULL;
 
+#ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|s", &arg_val, &arg_len) == FAILURE) {
         return;
     }
+#else
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STRING(arg_val, arg_len)
+    ZEND_PARSE_PARAMETERS_END();
+#endif
 
     if (arg_len > 0) {
         uri = play_string_new_with_chars(arg_val, arg_len);
