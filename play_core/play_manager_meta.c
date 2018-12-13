@@ -5,8 +5,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libxml2/libxml/parser.h>
-#include <libxml2/libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include <dirent.h>
 #include <sys/stat.h>
 

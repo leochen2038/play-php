@@ -88,4 +88,5 @@ if test "$PHP_PLAY" != "no"; then
     PHP_ADD_BUILD_DIR([$ext_builddir/play_core])
     PHP_ADD_BUILD_DIR([$ext_builddir/play_interface])
     PHP_ADD_BUILD_DIR([$ext_builddir/play_lib/clibs])
+    PHP_ADD_INCLUDE(/usr/include/libxml2)
 fi

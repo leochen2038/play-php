@@ -31,7 +31,7 @@ void play_interface_play_crontab_run_second_level(char *lower_class_name, long e
                     play_interface_utils_append_crontab_mutex_file(lock_mutex_file);
                     zend_call_method_with_0_params(obj, ce, NULL, "run", NULL);
                     wait(&status);
-                    zval_ptr_dtor(&obj);
+                    zval_ptr_dtor(obj);
                     // remove(lock_mutex_file);
                     exit(0);
                 }
