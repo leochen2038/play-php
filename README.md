@@ -1,5 +1,6 @@
 # play
-New php framework written in c, built in php extension
+New php framework written in c, built in php extension.
+A new way to write php code.
 
 ## 安装play扩展
 ```
