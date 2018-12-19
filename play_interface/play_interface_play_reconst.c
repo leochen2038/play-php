@@ -78,7 +78,7 @@ static void play_interface_play_reconst_create_processor(play_processor *p, int 
  *\n\
  * @version 1.0.0\n\
  * @author anonymous <anonymous@example.com>\n\
- * @copyright 2016-%04d The Play Framework\n\
+ * @copyright The Play Framework\n\
  * @history:\n\
  *			1.0.0 | anonymous | %d-%02d-%02d %02d:%02d:%02d | initialization\n\
  */\n\
@@ -277,6 +277,6 @@ static void play_interface_play_recons_create_condit(const char *condit, const c
         sprintf(code, "    /** %s */\n", note);
         play_string_append(src, code, strlen(code));
     }
-    sprintf(code, "    public function %s_%s_Gareater($val){return $this;}\n", condit, field);
+    sprintf(code, "    public function %s_%s_Greater($val){return $this;}\n", condit, field);
     play_string_append(src, code, strlen(code));
 }

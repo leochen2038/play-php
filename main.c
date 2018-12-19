@@ -6,6 +6,11 @@
 #include "play_core/play_core.h"
 #include "play_lib/uthash/utarray.h"
 
+struct A{
+    char a;
+    int b;
+    short c;
+};
 
 int bar(int n)
 {
@@ -24,8 +29,11 @@ void aynsc_print(const char *s)
 
 int main()
 {
-    int a = 65537;
-    printf("%04x\n", a%0x10000);
+    struct A a;
+    printf("A: %ld\n", sizeof(a));
+    return 0;
+//    int a = 65537;
+//    printf("%04x\n", a%0x10000);
 //    int size = 8+3;
 //    int len = 3;
 //    char senddata[size];
