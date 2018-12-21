@@ -84,7 +84,8 @@ static void play_interface_play_reconst_create_processor(play_processor *p, int 
  */\n\
 \n\
 class %s extends Processor\n\
-{\n", p->name->val, (1900 + ptm->tm_year), (1900 + ptm->tm_year),(ptm->tm_mon + 1), ptm->tm_mday,ptm->tm_hour, ptm->tm_min, ptm->tm_sec, p->name->val);
+{\n", p->name->val, (1900 + ptm->tm_year), (ptm->tm_mon + 1), ptm->tm_mday,ptm->tm_hour, ptm->tm_min, ptm->tm_sec, p->name->val);
+
     play_string_append(src, code, strlen(code));
     if (p->nextCount == 0) {
         sprintf(code, "\tconst RC_NORMAL = 0x00;\n");
@@ -102,7 +103,7 @@ class %s extends Processor\n\
     }\n\
 }\n");
     play_string_append(src, code, strlen(code));
-    //php_printf(">>%s,%d<<\n", p->path->val, p->path->len);
+
     if (play_interface_play_reconst_create_processor_mkdir(p)) {
         FILE *filefd = fopen(p->file->val, "w+");
         fwrite(src->val, src->len, 1, filefd);

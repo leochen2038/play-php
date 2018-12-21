@@ -112,7 +112,7 @@ int run_static_router_method(char *class_lowercase, int class_lowercase_len, con
         return -1;
     }
     if (param_count == 1) {
-        zend_call_method_with_1_params(NULL, ce, NULL, method, retval, obj);
+        zend_call_method(NULL, ce, NULL, method, strlen(method), retval, 1, obj, NULL);
     } else if (param_count == 2) {
         zend_call_method(NULL, ce, NULL, method, strlen(method), retval, 2, obj, args);
     } else {
