@@ -196,7 +196,7 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
     } else if (memcmp(action->val, "update", 6) == 0) {
         zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
         if (Z_TYPE_P(router) == IS_STRING) {
-            run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "getlist", retval, 1, obj, NULL);
+            run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "update", retval, 1, obj, NULL);
         } else {
             zend_call_method_with_1_params(router, Z_OBJCE_P(router), NULL, "update", retval, obj);
         }
