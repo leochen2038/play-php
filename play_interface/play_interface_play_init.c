@@ -484,7 +484,7 @@ abstract class Render_Abstract\n\
 {\n\
     public abstract function setHeader();\n\
     public abstract function run();\n\
-    public abstract function exception($e);\n\
+    public abstract function exception(Throwable $e);\n\
 }\n\
 \n\
 class Query\n\
