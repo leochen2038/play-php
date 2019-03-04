@@ -79,8 +79,8 @@ void play_interface_query_register(int _module_number);
 extern zend_class_entry *play_interface_render_abstract_ce;
 void play_interface_render_abstract_register(int _module_number);
 
-/* play_interface_net_c */
-extern zend_class_entry *play_interface_net_ce;
-void play_interface_net_register(int _module_number);
+/* play_interface_netkit.c */
+extern zend_class_entry *play_interface_netkit_ce;
+void play_interface_netkit_register(int _module_number);
 
 #endif //PROJECT_PLAY_INTERFACE_H

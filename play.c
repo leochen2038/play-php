@@ -106,7 +106,7 @@ PHP_MINIT_FUNCTION(play)
     play_interface_processor_register(module_number);
     play_interface_query_register(module_number);
     play_interface_render_abstract_register(module_number);
-	play_interface_net_register(module_number);
+	play_interface_netkit_register(module_number);
 	return SUCCESS;
 }
 /* }}} */
@@ -213,6 +213,7 @@ int set_root_path()
 		// printf("can not get run script path\n");
 		return 0;
 	}
+
 	root = play_find_project_root_by_path(Z_STRVAL_P(path), 0);
 	if (root != NULL) {
 		play_global_config_set_app_root(root->val, root->len);

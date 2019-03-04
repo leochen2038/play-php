@@ -23,7 +23,7 @@ set(PHPEXT_SOURCE_FILES
         play_interface/play_interface_query.c
         play_interface/play_interface_render_abstract.c
         play_interface/play_interface_utils.c
-        play_interface/play_interface_net.c)
+        play_interface/play_interface_netkit.c)
 set(SOURCE_FILES
         main.c
         play_core/play_string.c
@@ -31,7 +31,7 @@ set(SOURCE_FILES
         play_core/play_manager_action.c
         play_core/play_global_config.c
         play_core/play_manager_meta.c
-        play_core/play_socket.c)
+        play_core/play_socket.c play_core/play_fastcgi.c)
 
 set (Test main.c)
 

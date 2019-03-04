@@ -3,10 +3,10 @@
 //
 
 #include "play_core.h"
-#include <php.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #include "../play_lib/uthash/uthash.h"
 
 play_socket_ctx *socket_hashtable = NULL;
@@ -120,7 +120,7 @@ size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char 
     // php_printf("send ret:%ld\n", ret);
     if (ret == sendlen) {
         ret = play_socket_recv(socket_fd, recv);
-        php_printf("recv ret:%ld\n", ret);
+        // printf("recv ret:%ld\n", ret);
         if (ret > 0) {
             return ret;
         }

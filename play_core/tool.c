@@ -64,13 +64,6 @@ void play_str_tolower_copy(char *dest, const char *source, int length)
  */
 play_string *play_find_project_root_by_path(const char *path, int cache)
 {
-//    play_hitem_project_path *item = NULL;
-//    if (cache == 1) {
-//        HASH_FIND_STR(__play_project_path_hashtable, path, item);
-//        if (item != NULL) {
-//            return item->play_string;
-//        }
-//    }
     int path_len = strlen(path);
     char play_file[1024];
     sprintf(play_file, "%s/.play", path);
