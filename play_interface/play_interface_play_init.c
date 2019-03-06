@@ -538,9 +538,10 @@ class Play\n\
     public static function reconst(){}\n\
 }\n\
 \n\
-class Net\n\
+class NetKie\n\
 {\n\
-    public static function socket_protocol($host, $port, $cmd, $data, $respond, $timeout = 1){}\n\
+    public static function socket_protocol($host, $port, $cmd, $data, $respond = true, $timeout = 1){}\n\
+    public static function socket_fastcgi($host, $port, $params, $body, $respond = true, $timeout = 1){}\n\
 }\
 ");
 }

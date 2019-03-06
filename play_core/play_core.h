@@ -159,7 +159,7 @@ int play_fastcgi_set_param(char *buf, char *key, int klen, char *val, int vlen);
 int play_fastcgi_end_body(unsigned char *buf);
 int play_fastcgi_set_boby(unsigned char *buf, char *body, int len);
 int play_fastcgi_end_request(unsigned char *buf);
-unsigned char * play_fastcgi_send_request(int fd, unsigned char *request, int size);
+unsigned char * play_fastcgi_send_request(int fd, unsigned char *request, int size, int *response_size);
 int play_fastcgi_parse_head(char *data, int data_size);
 
 #endif //PROJECT_PLAY_CORE_H

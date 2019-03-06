@@ -135,7 +135,7 @@ int play_fastcgi_parse_head(char *data, int data_size)
     return 0;
 }
 
-unsigned char * play_fastcgi_send_request(int fd, unsigned char *request, int size)
+unsigned char * play_fastcgi_send_request(int fd, unsigned char *request, int size, int *response_size)
 {
     int nwrite;
     unsigned char *response = NULL;
@@ -184,6 +184,7 @@ unsigned char * play_fastcgi_send_request(int fd, unsigned char *request, int si
             }
         }
     }
+    *response_size = total;
     return response;
 }
 

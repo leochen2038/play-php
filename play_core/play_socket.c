@@ -154,7 +154,7 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time)
         // php_printf("new coonect\n");
         struct sockaddr_in servaddr;
         if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
-            // php_printf("创建网络连接失败, socket error!\n");
+            // printf("创建网络连接失败, socket error!\n");
             return NULL;
         };
 

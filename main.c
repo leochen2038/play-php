@@ -6,174 +6,40 @@
 #include "play_core/play_core.h"
 #include "play_lib/uthash/utarray.h"
 
-struct A{
-    char a;
-    int b;
-    short c;
-};
 
-int bar(int n)
+void test_fastcgi()
 {
-    if(n<2)return n;
-    return bar(n-1)+bar(n-2);
-}
+    int size = 0;
+    char buf[1024];
+    bzero(buf, 1024);
+    play_socket_ctx *client;
+    client = play_socket_connect("10.211.55.16", 9000, 86400);
+    size = play_fastcgi_start_request(buf);
+    size += play_fastcgi_set_param(buf+size, "SCRIPT_FILENAME", strlen("SCRIPT_FILENAME"), "/media/psf/psvrfls/web/htdocs/index.php", strlen("/media/psf/psvrfls/web/htdocs/index.php"));
+    size += play_fastcgi_set_param(buf+size, "REQUEST_METHOD", strlen("REQUEST_METHOD"), "POST", strlen("POST"));
+    size += play_fastcgi_set_param(buf+size, "DOCUMENT_ROOT", strlen("DOCUMENT_ROOT"), "/media/psf/psvrfls/web/htdocs/", strlen("/media/psf/psvrfls/web/htdocs/"));
+    size += play_fastcgi_set_param(buf+size, "REQUEST_URI", strlen("REQUEST_URI"), "/common/test.json", strlen("/common/test.json"));
+    size += play_fastcgi_set_param(buf+size, "CONTENT_TYPE", strlen("CONTENT_TYPE"), "application/x-www-form-urlencoded", strlen("application/x-www-form-urlencoded"));
+    size += play_fastcgi_set_param(buf+size, "CONTENT_LENGTH", strlen("CONTENT_LENGTH"), "17", strlen("17"));
+    size += play_fastcgi_set_param(buf+size, "QUERY_STRING", strlen("QUERY_STRING"), "a=2", strlen("a=2"));
+    size += play_fastcgi_end_request(buf+size);
 
-void aynsc_print(const char *s)
-{
-    pid_t fpid;
-    fpid = fork();
-    if (fpid == 0) {
-        printf("%s", s);
+    size += play_fastcgi_set_boby(buf+size, "a=20&b=10&c=5&d=6", 17);
+    size += play_fastcgi_end_body(buf+size);
+
+    int response_size = 0;
+    char * response = NULL;
+    response = play_fastcgi_send_request(client->socket_fd, buf, size, &response_size);
+    printf("%s\n", response);
+    if (response == NULL) {
+
     }
+    response_size = strlen(response);
+    int i = play_fastcgi_parse_head(response, response_size);
 }
 
 int main()
 {
-    struct A a;
-    printf("A: %ld\n", sizeof(a));
-    return 0;
-//    int a = 65537;
-//    printf("%04x\n", a%0x10000);
-//    int size = 8+3;
-//    int len = 3;
-//    char senddata[size];
-//    memcpy(senddata, "==>>", 4);
-//    memcpy(senddata+4, len, 4);
-//    printf("%s\n", senddata);
-//    for (int i = 0; i < 3; ++i) {
-//        aynsc_print("s");
-//    }
-//    int status;
-//    wait(&status);
+    test_fastcgi();
+    // test_fastcgi();
 }
-
-//struct my_struct {
-//    const char *name;          /* key */
-//    int id;
-//    UT_hash_handle hh;         /* makes this structure hashable */
-//};
-//
-//
-//int main(int argc, char *argv[]) {
-//    const char *names[] = { "joe", "bob", "betty", NULL };
-//    struct my_struct *s, *tmp, *users = NULL;
-//
-//    for (int i = 0; names[i]; ++i) {
-//        s = (struct my_struct *)malloc(sizeof *s);
-//        s->name = names[i];
-//        s->id = i;
-//        HASH_ADD_KEYPTR( hh, users, s->name, strlen(s->name), s );
-//    }
-//
-//    HASH_FIND_STR( users, "betty", s);
-//    if (s) printf("betty's id is %d\n", s->id);
-//
-//    /* free the hash table contents */
-//    HASH_ITER(hh, users, s, tmp) {
-//        HASH_DEL(users, s);
-//        free(s);
-//    }
-//    return 0;
-//}
-
-/* hash of hashes */
-//typedef struct item {
-//    char name[10];
-//    struct item *sub;
-//    int val;
-//    UT_hash_handle hh;
-//} item_t;
-//
-//item_t *items=NULL;
-//
-//int main(int argc, char *argvp[]) {
-//    item_t *item1, *item2, *tmp1, *tmp2;
-//
-//    /* make initial element */
-//    item_t *i = malloc(sizeof(*i));
-//    strcpy(i->name, "bob");
-//    i->sub = NULL;
-//    i->val = 0;
-//    HASH_ADD_STR(items, name, i);
-//
-//    /* add a sub hash table off this element */
-//    item_t *s = malloc(sizeof(*s));
-//    strcpy(s->name, "age");
-//    s->sub = NULL;
-//    s->val = 37;
-//    HASH_ADD_STR(i->sub, name, s);
-//
-//    s = malloc(sizeof(*s));
-//    strcpy(s->name, "id");
-//    s->sub = NULL;
-//    s->val = 40;
-//    HASH_ADD_STR(i->sub, name, s);
-//
-//    int count = HASH_COUNT(i->sub);
-//    printf("there are %d users\n", count);
-//
-//    item_t *j = NULL;
-//    HASH_FIND_STR(i, "bob", j);
-//
-//    /* iterate over hash elements  */
-////    HASH_ITER(hh, items, item1, tmp1) {
-//        HASH_ITER(hh, j, item2, tmp2) {
-//            printf("$items{%s}{%s} = %d\n", j->name, item2->name, item2->val);
-//        }
-////    }
-//
-//    /* clean up both hash tables */
-//    HASH_ITER(hh, items, item1, tmp1) {
-//        HASH_ITER(hh, item1->sub, item2, tmp2) {
-//            HASH_DEL(item1->sub, item2);
-//            free(item2);
-//        }
-//        HASH_DEL(items, item1);
-//        free(item1);
-//    }
-//
-//    return 0;
-//}
-
-int main_()
-{
-//    play_global_config_set_app_root("/Users/Leo/play7/soft", strlen("/Users/Leo/play7/soft"));
-//    play_meta_hashtable *item2, *tmp2;
-//    play_meta_hashtable *list = play_manager_meta_get_list_by_path("/Users/Leo/play7/soft/assets/meta");
-//    int count = HASH_COUNT(list);
-//    printf("there are %d meta\n", count);
-////
-//    HASH_ITER(hh, list, item2, tmp2) {
-//        printf("$items{%s} = %s\n", item2->name, item2->meta->name->val);
-//    }
-//    play_meta *meta = play_manager_meta_get_by_chars("Redis_Config", 1);
-//    play_action *action1 = play_manager_action_get_by_chars("shop/goods/detail", 1);
-
-
-//    play_global_config_set_app_root("/Users/Leo/play7/soft", strlen("/Users/Leo/play7/soft"));
-//    play_action *action1 = play_manager_action_get_by_chars("shop/goods/detail", 1);
-//    play_action *action = play_manager_action_get_by_chars("setting/bind", 1);
-//
-//
-    return 0;
-}
-
-
-//int main() {
-//    UT_array *strs;
-//    char *s, **p;
-//
-//    utarray_new(strs,&ut_str_icd);
-//
-//    s = "hello"; utarray_push_back(strs, &s);
-//    s = "world"; utarray_push_back(strs, &s);
-//    s = "world"; utarray_push_back(strs, &s);
-//    p = NULL;
-//    while ( (p=(char**)utarray_next(strs,p))) {
-//        printf("%s\n",*p);
-//    }
-//
-//    utarray_free(strs);
-//
-//    return 0;
-//}
