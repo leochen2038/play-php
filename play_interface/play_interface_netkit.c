@@ -36,7 +36,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
     long timeout = 0;
     unsigned char respond = 1;
 #ifndef FAST_ZPP
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "zlzz|bl", &host, &port, &params, &body, &respond &timeout) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "zlzz|bl", &host, &port, &params, &body, &respond, &timeout) == FAILURE) {
         return;
     }
 #else
@@ -68,14 +68,16 @@ PHP_METHOD(NetKit, socket_fastcgi)
         RETURN_NULL();
     }
 
-    int idx, i;
+    int i;
+    zend_ulong idx;
     zval *z_item = NULL;
     zend_string *z_key;
 
     int size = 0;
+    char *buf;
     int buf_size = 512 + Z_STRLEN_P(body);
-    char buf[buf_size];
-    bzero(buf, buf_size);
+    buf = calloc(1, buf_size);
+
 
     play_socket_ctx *client;
     timeout = timeout > 0 ? timeout : 1;
@@ -87,6 +89,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
     size = play_fastcgi_start_request(buf);
     int count = zend_hash_num_elements(Z_ARRVAL_P(params));
     zend_hash_internal_pointer_reset(Z_ARRVAL_P(params));
+
     for (i = 0; i < count; i ++) {
         z_item = zend_hash_get_current_data(Z_ARRVAL_P(params));
         zend_hash_get_current_key(Z_ARRVAL_P(params), &z_key, &idx);
@@ -104,6 +107,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
         int response_size = 0;
         char *response = NULL;
         response = play_fastcgi_send_request(client->socket_fd, buf, size, &response_size);
+        free(buf);
         if (response == NULL && response_size > 0) {
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() send or recv error");
             RETURN_NULL();
@@ -112,7 +116,10 @@ PHP_METHOD(NetKit, socket_fastcgi)
         ZVAL_STRINGL(return_value, response + i, response_size - i);
         free(response);
     } else {
-        if (write(client->socket_fd, buf, size) != size) {
+        int nwrite = 0;
+        nwrite = write(client->socket_fd, buf, size);
+        free(buf);
+        if (nwrite != size) {
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() send error");
             RETURN_NULL();
         }
@@ -127,11 +134,11 @@ PHP_METHOD(NetKit, socket_protocol)
     zval *host, *cmd, *message;
 
 #ifndef FAST_ZPP
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "zlzzb|l", &host, &port, $cmd, &message, &respond, &timeout) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "zlzz|bl", &host, &port, $cmd, &message, &respond, &timeout) == FAILURE) {
         return;
     }
 #else
-    ZEND_PARSE_PARAMETERS_START(5, 6)
+    ZEND_PARSE_PARAMETERS_START(4, 6)
         Z_PARAM_ZVAL(host)
         Z_PARAM_LONG(port)
         Z_PARAM_ZVAL(cmd)
