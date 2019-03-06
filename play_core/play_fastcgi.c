@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <zconf.h>
 #include <stdio.h>
+#include "play_core.h"
 
 typedef struct {
     unsigned char version;
@@ -69,59 +70,71 @@ static int fastcgi_read_header(int fd, fcgi_header *header);
 static int fastcgi_read_body(int fd, char *buffer, int length, int padding);
 static int fastcgi_read_end_request(int fd);
 
-int play_fastcgi_start_request(unsigned char *buf)
+int play_fastcgi_start_request(play_socket_ctx *sctx)
 {
-    int nsize;
     fcgi_begin_request_record record;
     play_fastcgi_init_header(&record.header, FCGI_TYPE_BEGIN_REQUEST, 0, sizeof(record.body), 0);
     play_fastcgi_init_begin_request_body(&record.body, FCGI_ROLE_RESPONDER, 1);
 
-    nsize = sizeof(record);
-    memcpy(buf, (char *)&record, sizeof(record));
-
-    return nsize;
+    if (send(sctx->socket_fd, (char *)&record, sizeof(record), 0) != sizeof(record)) {
+        return -1;
+    }
+    return 0;
 }
 
-int play_fastcgi_set_param(char *buf, char *key, int klen, char *val, int vlen)
-{
-    int bodylen;
-    fcgi_header header;
-
-    play_fastcgi_init_kv_body(buf+FCGI_HEADER_LENGTH, &bodylen, key, klen, val, vlen);
-    play_fastcgi_init_header(&header, FCGI_TYPE_PARAMS, 0, bodylen, 0);
-
-    memcpy(buf, &header, FCGI_HEADER_LENGTH);
-    return FCGI_HEADER_LENGTH + bodylen;
-}
-
-int play_fastcgi_end_body(unsigned char *buf)
-{
-    fcgi_header header;
-    play_fastcgi_init_header(&header, FCGI_TYPE_STDIN, 0, 0, 0);
-
-    memcpy(buf, &header, FCGI_HEADER_LENGTH);
-    return FCGI_HEADER_LENGTH;
-}
-
-int play_fastcgi_set_boby(unsigned char *buf, char *body, int len)
-{
-    fcgi_header header;
-
-    play_fastcgi_init_header(&header, FCGI_TYPE_STDIN, 0, len, 0);
-
-    memcpy(buf, &header, FCGI_HEADER_LENGTH);
-    memcpy(buf+FCGI_HEADER_LENGTH, body, len);
-
-    return FCGI_HEADER_LENGTH + len;
-}
-
-int play_fastcgi_end_request(unsigned char *buf)
+int play_fastcgi_end_request(play_socket_ctx *sctx)
 {
     fcgi_header header;
     play_fastcgi_init_header(&header, FCGI_TYPE_PARAMS, 0, 0, 0);
-    memcpy(buf, &header, FCGI_HEADER_LENGTH);
-    return FCGI_HEADER_LENGTH;
+    if (send(sctx->socket_fd, &header, FCGI_HEADER_LENGTH, 0) != FCGI_HEADER_LENGTH) {
+        return -1;
+    }
+    return 0;
 }
+
+int play_fastcgi_set_param(play_socket_ctx *sctx, char *key, int klen, char *val, int vlen)
+{
+    int bodylen = 0;
+    char kvbody[256];
+    bzero(kvbody, 256);
+    fcgi_header header;
+
+    play_fastcgi_init_kv_body(kvbody, &bodylen, key, klen, val, vlen);
+    play_fastcgi_init_header(&header, FCGI_TYPE_PARAMS, 0, bodylen, 0);
+
+    if (send(sctx->socket_fd, &header, FCGI_HEADER_LENGTH, 0) != FCGI_HEADER_LENGTH) {
+        return -1;
+    }
+    if (send(sctx->socket_fd, kvbody, bodylen, 0) != bodylen) {
+        return -2;
+    }
+    return 0;
+}
+
+int play_fastcgi_set_boby(play_socket_ctx *sctx, char *body, int len)
+{
+    int pack_size;
+    fcgi_header header;
+    do {
+        pack_size = len > 0xffff ? 0xffff : len;
+        play_fastcgi_init_header(&header, FCGI_TYPE_STDIN, 0, pack_size, 0);
+        if (send(sctx->socket_fd, &header, FCGI_HEADER_LENGTH, 0) != FCGI_HEADER_LENGTH) {
+            return -1;
+        }
+        if (write(sctx->socket_fd, body, pack_size) != pack_size) {
+            return -2;
+        }
+        body = body + pack_size;
+        len -= pack_size;
+    } while (len > 0);
+
+    play_fastcgi_init_header(&header, FCGI_TYPE_STDIN, 0, 0, 0);
+    if (write(sctx->socket_fd, &header, FCGI_HEADER_LENGTH) != FCGI_HEADER_LENGTH) {
+        return -3;
+    }
+    return 0;
+}
+
 
 int play_fastcgi_parse_head(char *data, int data_size)
 {
@@ -135,20 +148,15 @@ int play_fastcgi_parse_head(char *data, int data_size)
     return 0;
 }
 
-unsigned char * play_fastcgi_send_request(int fd, unsigned char *request, int size, int *response_size)
+unsigned char * play_fastcgi_get_response(play_socket_ctx *sctx, int *response_size)
 {
-    int nwrite;
     unsigned char *response = NULL;
     int total = 0;
     int exit_flag = 0;
     fcgi_header response_header;
 
-    nwrite = write(fd, request, size);
-    if (nwrite != size) {
-        return NULL;
-    }
     while (!exit_flag) {
-        if (fastcgi_read_header(fd, &response_header) == -1) {
+        if (fastcgi_read_header(sctx->socket_fd, &response_header) == -1) {
             return NULL;
         }
 
@@ -168,7 +176,7 @@ unsigned char * play_fastcgi_send_request(int fd, unsigned char *request, int si
                     response = realloc(response, total);
                 }
 
-                ret = fastcgi_read_body(fd, response + (total - length), length, padding);
+                ret = fastcgi_read_body(sctx->socket_fd, response + (total - length), length, padding);
                 if (ret == -1) {
                     return NULL;
                 }
@@ -176,7 +184,7 @@ unsigned char * play_fastcgi_send_request(int fd, unsigned char *request, int si
             }
 
             case FCGI_TYPE_END_REQUEST: {
-                if (fastcgi_read_end_request(fd) == -1) {
+                if (fastcgi_read_end_request(sctx->socket_fd) == -1) {
                     return NULL;
                 }
                 exit_flag = 1;

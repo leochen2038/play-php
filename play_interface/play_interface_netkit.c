@@ -30,11 +30,10 @@ void play_interface_netkit_register(int _module_number)
 PHP_METHOD(NetKit, socket_fastcgi)
 {
     long port;
-    zval *host = NULL;
-    zval *params = NULL;
-    zval *body = NULL;
     long timeout = 0;
     unsigned char respond = 1;
+    zval *host, *params, *body;
+
 #ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "zlzz|bl", &host, &port, &params, &body, &respond, &timeout) == FAILURE) {
         return;
@@ -69,15 +68,9 @@ PHP_METHOD(NetKit, socket_fastcgi)
     }
 
     int i;
+    zval *z_item;
     zend_ulong idx;
-    zval *z_item = NULL;
     zend_string *z_key;
-
-    int size = 0;
-    char *buf;
-    int buf_size = 512 + Z_STRLEN_P(body);
-    buf = calloc(1, buf_size);
-
 
     play_socket_ctx *client;
     timeout = timeout > 0 ? timeout : 1;
@@ -86,43 +79,42 @@ PHP_METHOD(NetKit, socket_fastcgi)
         RETURN_NULL();
     }
 
-    size = play_fastcgi_start_request(buf);
+    if (play_fastcgi_start_request(client) != 0) {
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not send start request to %s:%d", Z_STRVAL_P(host), port);
+        RETURN_NULL();
+    }
     int count = zend_hash_num_elements(Z_ARRVAL_P(params));
     zend_hash_internal_pointer_reset(Z_ARRVAL_P(params));
-
     for (i = 0; i < count; i ++) {
         z_item = zend_hash_get_current_data(Z_ARRVAL_P(params));
         zend_hash_get_current_key(Z_ARRVAL_P(params), &z_key, &idx);
-        size += play_fastcgi_set_param(buf+size, z_key->val, z_key->len, Z_STRVAL_P(z_item), Z_STRLEN_P(z_item));
+        if (play_fastcgi_set_param(client, z_key->val, z_key->len, Z_STRVAL_P(z_item), Z_STRLEN_P(z_item)) != 0 ) {
+            play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not send param to %s:%d", Z_STRVAL_P(host), port);
+            RETURN_NULL();
+        }
         zend_hash_move_forward(Z_ARRVAL_P(params));
     }
-    size += play_fastcgi_end_request(buf+size);
 
-    if (Z_STRLEN_P(body) > 0) {
-        size += play_fastcgi_set_boby(buf + size, Z_STRVAL_P(body), Z_STRLEN_P(body));
-        size += play_fastcgi_end_body(buf + size);
+    if (play_fastcgi_end_request(client) != 0) {
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not send end request to %s:%d", Z_STRVAL_P(host), port);
+        RETURN_NULL();
+    }
+    if (Z_STRLEN_P(body) > 0 && play_fastcgi_set_boby(client, Z_STRVAL_P(body), Z_STRLEN_P(body)) != 0) {
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not send body to %s:%d", Z_STRVAL_P(host), port);
+        RETURN_NULL();
     }
 
     if (respond) {
         int response_size = 0;
         char *response = NULL;
-        response = play_fastcgi_send_request(client->socket_fd, buf, size, &response_size);
-        free(buf);
+        response = play_fastcgi_get_response(client, &response_size);
         if (response == NULL && response_size > 0) {
-            play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() send or recv error");
+            play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not get response from %s:%d", Z_STRVAL_P(host), port);
             RETURN_NULL();
         }
         i = play_fastcgi_parse_head(response, response_size);
         ZVAL_STRINGL(return_value, response + i, response_size - i);
         free(response);
-    } else {
-        int nwrite = 0;
-        nwrite = write(client->socket_fd, buf, size);
-        free(buf);
-        if (nwrite != size) {
-            play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() send error");
-            RETURN_NULL();
-        }
     }
 }
 
