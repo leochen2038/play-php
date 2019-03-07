@@ -12,13 +12,14 @@
 #include <zend_interfaces.h>
 
 zend_class_entry *play_interface_action_ce;
-static void play_interface_action_render();
+static void play_interface_action_render(zval *obj);
 static void play_interface_action_run(play_action *act);
 static void play_interface_action_run_with_debug(play_action *act);
 
 static void play_interface_action_get_uri_from_url(play_string **uri, play_string **render);
 static void play_interface_action_update_property(const char *url, int urllen, const char *render, int render_len);
 static play_processor *play_interface_action_run_processor(play_processor *p);
+static void play_interface_init_render(zval *obj, unsigned char construct);
 
 PHP_METHOD(Action, boot);
 const zend_function_entry  play_interface_action_functions[] = {
@@ -40,6 +41,9 @@ void play_interface_action_register(int _module_number)
 
 PHP_METHOD(Action, boot)
 {
+    unsigned char is_change_render = 0;
+    zval *pr;
+    zval obj_render;
     zend_string *arg = NULL;
     play_string *uri = NULL;
     play_string *render = NULL;
@@ -56,19 +60,24 @@ PHP_METHOD(Action, boot)
     ZEND_PARSE_PARAMETERS_END();
 #endif
 
+    // step 1. 获取参数，是否指定运行特定的action
     if (arg != NULL && ZSTR_LEN(arg) > 0) {
         uri = play_string_new_with_chars(ZSTR_VAL(arg), ZSTR_LEN(arg));
     } else {
         play_interface_action_get_uri_from_url(&uri, &render);
     }
 
+    // step 2. 获取render名称
     if (render == NULL) {
-        zval *pr = zend_read_static_property(play_interface_play_ce, "render", 6, 1);
-        play_interface_action_update_property(uri->val, uri->len, Z_STRVAL_P(pr),  Z_STRLEN_P(pr));
-    } else {
-        play_interface_action_update_property(uri->val, uri->len, render->val, render->len);
+        pr = zend_read_static_property(play_interface_play_ce, "render", 6, 1);
+        render = play_string_new_with_chars(Z_STRVAL_P(pr), Z_STRLEN_P(pr));
     }
+    play_interface_action_update_property(uri->val, uri->len, render->val, render->len);
 
+    // step 3. 初始化render类
+    play_interface_init_render(&obj_render, 1);
+
+    // step 4. 执行action的process类
     int checknew = play_interface_play_checknew();
     if ((action = play_manager_action_get_by_chars(uri->val, checknew)) == NULL) {
         play_interface_utils_trigger_exception(PLAY_ERR_ACTION_NOT_FIND, "can not find action %s\n", uri->val);
@@ -76,33 +85,36 @@ PHP_METHOD(Action, boot)
         play_interface_action_run_with_debug(action);
     }
 
+    // step 5. 执行render渲染方法
     play_string_free(uri);
+    pr = zend_read_static_property(play_interface_action_ce, "render", 6, 1);
+    is_change_render = memcmp(render->val, Z_STRVAL_P(pr), render->len) == 0 ? 0 : 1;
     play_string_free(render);
-    play_interface_action_render();
+
+    if (is_change_render){
+        zval obj_new_render;
+        play_interface_init_render(&obj_new_render, 0);
+        play_interface_action_render(&obj_new_render);
+        zval_ptr_dtor(&obj_new_render);
+    } else {
+        play_interface_action_render(&obj_render);
+    }
+    zval_ptr_dtor(&obj_render);
 }
 
-// 执行渲染输出
-static void play_interface_action_render()
+static void play_interface_init_render(zval *obj, unsigned char construct)
 {
-    int p_e = 0;
-    zval exception;
     zval *render = NULL;
     int render_classname_len;
+    char *class_lowercase;
+    zend_class_entry *ce = NULL;
 
-    if (EG(exception)) {
-        p_e = 1;
-        ZVAL_OBJ(&exception, EG(exception));
-        EG(exception) = NULL;
-    }
     render = zend_read_static_property(play_interface_action_ce, "render", 6, 1);
     render_classname_len = 8 + Z_STRLEN_P(render);
     char bigCase = toupper(Z_STRVAL_P(render)[0]);
+
     char className[render_classname_len];
     snprintf(className, render_classname_len, "Render_%c%s", bigCase, Z_STRVAL_P(render)+1);
-
-    char *class_lowercase;
-    zend_class_entry *ce = NULL;
-    zval obj;
 
     char classPath[1024];
     snprintf(classPath, 1024, "%s/render/%s.php", gconfig.app_root, className);
@@ -114,26 +126,38 @@ static void play_interface_action_render()
             play_interface_utils_trigger_exception(PLAY_ERR_ACTION_NOT_FIND, "can not load render %s.php\n", className);
             return;
         }
-
         if ((ce = zend_hash_str_find_ptr(EG(class_table), class_lowercase, render_classname_len-1)) == NULL) {
             efree(class_lowercase);
             play_interface_utils_trigger_exception(PLAY_ERR_ACTION_NOT_FIND, "can not find class %s.php\n", className);
             return;
         }
     }
+    efree(class_lowercase);
 
-    object_init_ex(&obj, ce);
-    zend_call_method_with_0_params(&obj, ce, NULL, "setheader", NULL);
+    object_init_ex(obj, ce);
+    if (construct) {
+        zend_call_method_with_0_params(obj, ce, NULL, "__construct", NULL);
+    }
+    zend_call_method_with_0_params(obj, ce, NULL, "setheader", NULL);
+}
 
+// 执行渲染输出
+static void play_interface_action_render(zval *obj)
+{
+    int p_e = 0;
+    zval exception;
+
+    if (EG(exception)) {
+        p_e = 1;
+        ZVAL_OBJ(&exception, EG(exception));
+        EG(exception) = NULL;
+    }
     if (p_e) {
-        zend_call_method_with_1_params(&obj, ce, NULL, "exception", NULL, &exception);
+        zend_call_method_with_1_params(obj, Z_OBJCE_P(obj), NULL, "exception", NULL, &exception);
         zval_ptr_dtor(&exception);
     } else {
-        zend_call_method_with_0_params(&obj, ce, NULL, "run", NULL);
+        zend_call_method_with_0_params(obj, Z_OBJCE_P(obj), NULL, "run", NULL);
     }
-
-    efree(class_lowercase);
-    zval_ptr_dtor(&obj);
 }
 
 // 执行processor, 并返回下一个processor

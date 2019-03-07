@@ -482,6 +482,7 @@ abstract class Processor\n\
 \n\
 abstract class Render_Abstract\n\
 {\n\
+    public abstract function __construct();\n\
     public abstract function setHeader();\n\
     public abstract function run();\n\
     public abstract function exception(Throwable $e);\n\
@@ -538,7 +539,7 @@ class Play\n\
     public static function reconst(){}\n\
 }\n\
 \n\
-class NetKie\n\
+class NetKit\n\
 {\n\
     public static function socket_protocol($host, $port, $cmd, $data, $respond = true, $timeout = 1){}\n\
     public static function socket_fastcgi($host, $port, $params, $body, $respond = true, $timeout = 1){}\n\

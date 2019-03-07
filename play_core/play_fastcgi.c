@@ -95,8 +95,8 @@ int play_fastcgi_end_request(play_socket_ctx *sctx)
 int play_fastcgi_set_param(play_socket_ctx *sctx, char *key, int klen, char *val, int vlen)
 {
     int bodylen = 0;
-    char kvbody[256];
-    bzero(kvbody, 256);
+    char kvbody[1024];
+    bzero(kvbody, 1024);
     fcgi_header header;
 
     play_fastcgi_init_kv_body(kvbody, &bodylen, key, klen, val, vlen);
