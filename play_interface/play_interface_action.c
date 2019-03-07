@@ -40,25 +40,24 @@ void play_interface_action_register(int _module_number)
 
 PHP_METHOD(Action, boot)
 {
-    int arg_len = 0;
-    char *arg_val = NULL;
+    zend_string *arg = NULL;
     play_string *uri = NULL;
     play_string *render = NULL;
     play_action *action = NULL;
 
 #ifndef FAST_ZPP
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "|s", &arg_val, &arg_len) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S", &arg) == FAILURE) {
         return;
     }
 #else
     ZEND_PARSE_PARAMETERS_START(0, 1)
         Z_PARAM_OPTIONAL
-        Z_PARAM_STRING(arg_val, arg_len)
+        Z_PARAM_STR(arg)
     ZEND_PARSE_PARAMETERS_END();
 #endif
 
-    if (arg_len > 0) {
-        uri = play_string_new_with_chars(arg_val, arg_len);
+    if (arg != NULL && ZSTR_LEN(arg) > 0) {
+        uri = play_string_new_with_chars(ZSTR_VAL(arg), ZSTR_LEN(arg));
     } else {
         play_interface_action_get_uri_from_url(&uri, &render);
     }
@@ -203,7 +202,7 @@ static void play_interface_action_run_with_debug(play_action *act)
         if (Z_TYPE_P(track) == IS_NULL) {
             array_init(track);
         }
-        char barf[128] = {NULL};
+        char barf[128] = {0};
         do {
             char strtrack[256];
             if (p->parent != NULL) {
