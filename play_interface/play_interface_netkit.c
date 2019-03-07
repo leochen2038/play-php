@@ -108,7 +108,8 @@ PHP_METHOD(NetKit, socket_fastcgi)
         int response_size = 0;
         char *response = NULL;
         response = play_fastcgi_get_response(client, &response_size);
-        if (response == NULL && response_size > 0) {
+        if (response == NULL && response_size == 0) {
+            play_socket_cleanup_and_close(client);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not get response from %s:%d", Z_STRVAL_P(host), port);
             RETURN_NULL();
         }
@@ -174,12 +175,12 @@ PHP_METHOD(NetKit, socket_protocol)
             memcpy(&data_len, sctx->read_buf+1, 4);
             memcpy(reponse_id, sctx->read_buf+5, 32);
             if (memcmp(reponse_id, request_id, 32) != 0) {
-                play_socket_cleanup_with_protocol(sctx);
+                play_socket_cleanup_and_close(sctx);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", request_id, reponse_id);
                 RETURN_NULL();
             }
             if (data_len > sctx->read_buf_ncount) {
-                play_socket_cleanup_with_protocol(sctx);
+                play_socket_cleanup_and_close(sctx);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "data len error:%d, %d", data_len, sctx->read_buf_ncount);
                 RETURN_NULL();
             }
