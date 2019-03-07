@@ -41,13 +41,13 @@ void play_interface_action_register(int _module_number)
 
 PHP_METHOD(Action, boot)
 {
-    unsigned char is_change_render = 0;
     zval *pr;
     zval obj_render;
     zend_string *arg = NULL;
     play_string *uri = NULL;
     play_string *render = NULL;
     play_action *action = NULL;
+    unsigned char is_change_render = 0;
 
 #ifndef FAST_ZPP
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S", &arg) == FAILURE) {
