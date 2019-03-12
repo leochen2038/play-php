@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <zconf.h>
 #include "../play_lib/uthash/uthash.h"
 
 play_socket_ctx *socket_hashtable = NULL;
@@ -128,7 +129,7 @@ size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char 
     return 0;
 }
 
-play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time)
+play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, int persisent)
 {
     int needConnect = 1;
     char cipv4[21];
@@ -136,19 +137,22 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time)
     play_socket_ctx *sctx = NULL;
 
     snprintf(cipv4, 21, "%s:%d", host, port);
-    HASH_FIND_STR(socket_hashtable, cipv4, sctx);
-    if (sctx != NULL) {
-        char recvdata[1024];
-        socket_fd = sctx->socket_fd;
-        play_socket_cleanup_with_protocol(sctx);
-        while (recv(socket_fd, recvdata, 1024, MSG_DONTWAIT) > 0) {
-            // php_printf("cache data:%s\n", recvdata);
-        }
-        if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
-            // php_printf("use coonect\n");
-            needConnect = 0;
+    if (persisent) {
+        HASH_FIND_STR(socket_hashtable, cipv4, sctx);
+        if (sctx != NULL) {
+            char recvdata[1024];
+            socket_fd = sctx->socket_fd;
+            play_socket_cleanup_with_protocol(sctx);
+            while (recv(socket_fd, recvdata, 1024, MSG_DONTWAIT) > 0) {
+                // php_printf("cache data:%s\n", recvdata);
+            }
+            if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
+                // php_printf("use coonect\n");
+                needConnect = 0;
+            }
         }
     }
+
 
     if (needConnect == 1) {
         // php_printf("new coonect\n");
@@ -182,7 +186,9 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time)
         }
 
         sctx->socket_fd = socket_fd;
-        HASH_ADD_STR(socket_hashtable, ipv4, sctx);
+        if (persisent) {
+            HASH_ADD_STR(socket_hashtable, ipv4, sctx);
+        }
     }
 
     // 设置超时时间
@@ -194,9 +200,11 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time)
     return sctx;
 }
 
-void play_socket_cleanup_and_close(play_socket_ctx *sctx)
+void play_socket_cleanup_and_close(play_socket_ctx *sctx, int persisent)
 {
-    HASH_DEL(socket_hashtable, sctx);
+    if (persisent) {
+        HASH_DEL(socket_hashtable, sctx);
+    }
     close(sctx->socket_fd);
     if (sctx->read_buf != NULL) {
         free(sctx->read_buf);

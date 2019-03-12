@@ -74,7 +74,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
 
     play_socket_ctx *client;
     timeout = timeout > 0 ? timeout : 1;
-    if ((client = play_socket_connect(Z_STRVAL_P(host), port, timeout)) == NULL) {
+    if ((client = play_socket_connect(Z_STRVAL_P(host), port, timeout, 0)) == NULL) {
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
     }
@@ -108,14 +108,17 @@ PHP_METHOD(NetKit, socket_fastcgi)
         int response_size = 0;
         char *response = NULL;
         response = play_fastcgi_get_response(client, &response_size);
+        play_socket_cleanup_and_close(client, 0);
         if (response == NULL && response_size == 0) {
-            play_socket_cleanup_and_close(client);
+            //play_socket_cleanup_and_close(client);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not get response from %s:%d", Z_STRVAL_P(host), port);
             RETURN_NULL();
         }
         i = play_fastcgi_parse_head(response, response_size);
         ZVAL_STRINGL(return_value, response + i, response_size - i);
         free(response);
+    } else {
+        play_socket_cleanup_and_close(client, 0);
     }
 }
 
@@ -157,7 +160,7 @@ PHP_METHOD(NetKit, socket_protocol)
 
     play_socket_ctx *sctx = NULL;
     timeout = timeout > 0 ? timeout : 1;
-    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout)) == NULL) {
+    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
     }
@@ -175,12 +178,12 @@ PHP_METHOD(NetKit, socket_protocol)
             memcpy(&data_len, sctx->read_buf+1, 4);
             memcpy(reponse_id, sctx->read_buf+5, 32);
             if (memcmp(reponse_id, request_id, 32) != 0) {
-                play_socket_cleanup_and_close(sctx);
+                play_socket_cleanup_and_close(sctx, 1);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", request_id, reponse_id);
                 RETURN_NULL();
             }
             if (data_len > sctx->read_buf_ncount) {
-                play_socket_cleanup_and_close(sctx);
+                play_socket_cleanup_and_close(sctx, 1);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "data len error:%d, %d", data_len, sctx->read_buf_ncount);
                 RETURN_NULL();
             }
