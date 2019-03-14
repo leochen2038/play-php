@@ -163,5 +163,5 @@ PHP_METHOD(Play, crontab)
         }
     }
     int status;
-    wait(&status);
+    while(wait(&status)>0);
 }

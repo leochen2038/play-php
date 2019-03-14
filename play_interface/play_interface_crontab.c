@@ -107,7 +107,7 @@ PHP_METHOD(Crontab, fork)
     } else if (fpid == 0) {
         char *funName = zend_str_tolower_dup(Z_STRVAL_P(method), Z_STRLEN_P(method));
         zend_call_method(getThis(), Z_OBJCE_P(getThis()), NULL, funName, Z_STRLEN_P(method), NULL, 1, args, NULL);
-        php_printf("in crontab fork: %s\n", funName);
+        // php_printf("in crontab fork: %s\n", funName);
         efree(funName);
         exit(0);
     }
@@ -249,7 +249,7 @@ PHP_METHOD(Crontab, debug)
     zend_call_method_with_0_params(&obj, ce, NULL, "run", NULL);
     zval_ptr_dtor(&obj);
     int status;
-    wait(&status);
+    while(wait(&status)>0);
 }
 
 static int check_item(char *item, int target)
