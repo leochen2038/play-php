@@ -76,6 +76,9 @@ PHP_METHOD(Action, boot)
 
     // step 3. 初始化render类
     play_interface_init_render(&obj_render, 1);
+    if (EG(exception)) {
+        return;
+    }
 
     // step 4. 执行action的process类
     int checknew = play_interface_play_checknew();
