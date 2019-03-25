@@ -19,6 +19,7 @@ const char *play_interface_utils_get_zval_type_name(int idx);
 int play_interface_utils_find_target_file(char *path, char *file_list[], int *file_list_count, char *target);
 void play_interface_utils_append_crontab_mutex_file(char *lock_file);
 void play_interface_utils_clean_crontab_mutex_file();
+int play_interface_utils_load_config(char *path, zval *result);
 
 
 /* play_interface_action.c */
@@ -34,6 +35,7 @@ int play_interface_play_checknew();
 /* play_interface_play_crontab.c */
 void play_interface_play_crontab_run_second_level(char *lower_class_name, long es, zval *obj, zend_class_entry *ce);
 void play_interface_play_crontab_run_normal_level(char *lower_class_name, long mutex, zval *obj, zend_class_entry *ce);
+int check_crontab_activation(const char *pattern, struct tm *p);
 
 /* play_interface_play_init.c */
 void play_interface_play_init(const char *proj);

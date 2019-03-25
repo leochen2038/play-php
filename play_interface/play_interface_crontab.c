@@ -352,3 +352,21 @@ static void get_crontab_file_by_class_name(char *filepath, char *class_name, siz
     }
     closedir(pDir);
 }
+
+
+int check_crontab_activation(const char *pattern, struct tm *p)
+{
+    int i, hit;
+    char **crontabList;
+    if (play_explode(&crontabList, pattern, ' ') != 5) {
+        return -1;
+    }
+    int targetType[] = {p->tm_min, p->tm_hour, p->tm_mday, (p->tm_mon + 1), p->tm_wday};
+    for (i = 4; i >= 0; i--) {
+        hit = check_item(crontabList[i], targetType[i]);
+        if (hit == 0) {
+            break;
+        }
+    }
+    return hit;
+}

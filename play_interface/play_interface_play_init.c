@@ -537,6 +537,7 @@ class Play\n\
     public static $render = 'html';\n\
     public static function init($projName=''){}\n\
     public static function reconst(){}\n\
+    public static function crontab($root_path, $environment='release'){}\n\
 }\n\
 \n\
 class NetKit\n\
