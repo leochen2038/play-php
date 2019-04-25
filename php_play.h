@@ -24,7 +24,7 @@
 extern zend_module_entry play_module_entry;
 #define phpext_play_ptr &play_module_entry
 
-#define PHP_PLAY_VERSION "2.1.1" /* Replace with version number for your extension */
+#define PHP_PLAY_VERSION "2.1.3" /* Replace with version number for your extension */
 
 #ifdef PHP_WIN32
 #	define PHP_PLAY_API __declspec(dllexport)
