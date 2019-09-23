@@ -54,7 +54,7 @@ void play_socket_cleanup_with_protocol(play_socket_ctx *sctx)
 
 size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
 {
-    int size, rcount;
+    int size, rcount, result;
     char header[4];
     rcount = read(sctx->socket_fd, header, 4);
 
@@ -68,22 +68,50 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
     sctx->read_buf_ncount = size;
     sctx->read_buf_rcount = 0;
 
-    while ((rcount = read(sctx->socket_fd, sctx->read_buf+sctx->read_buf_rcount, size))) {
-        if (rcount > 0) {
-            sctx->read_buf_rcount += rcount;
-            if (sctx->read_buf_rcount >= sctx->read_buf_ncount) {
-                break;
-            } else {
-                size -= rcount;
+    result = socket_read(sctx->socket_fd, sctx->read_buf, size);
+    if (result != size) {
+        return -1;
+    }
+    return 1;
+//    while ((rcount = read(sctx->socket_fd, sctx->read_buf+sctx->read_buf_rcount, size))) {
+//        if (rcount > 0) {
+//            sctx->read_buf_rcount += rcount;
+//            if (sctx->read_buf_rcount >= sctx->read_buf_ncount) {
+//                break;
+//            } else {
+//                size -= rcount;
+//            }
+//        } else if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
+//            // php_printf("\nwait\n");
+//            usleep(10);
+//        } else {
+//            // 读取错误
+//            // php_printf("read error\n");
+//        }
+//    }
+}
+
+size_t socket_read(int socketfd, char *buffer, int length) {
+    int readCount;
+    int nread = 0;
+    int maxTryTime = 3;
+    int tryTime = 0;
+
+    for (readCount = 0; readCount < length; ) {
+        nread = read(socketfd, buffer + readCount, length - readCount);
+        if (nread == -1 && !(errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN)) {
+            return -1;
+        }
+        readCount += nread;
+        if (readCount != length) {
+            if (tryTime++ > maxTryTime) {
+                return -1;
             }
-        } else if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
-            // php_printf("\nwait\n");
-            usleep(10);
-        } else {
-            // 读取错误
-            // php_printf("read error\n");
+            usleep(tryTime);
         }
     }
+
+    return readCount;
 }
 
 
@@ -143,11 +171,8 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, 
             char recvdata[1024];
             socket_fd = sctx->socket_fd;
             play_socket_cleanup_with_protocol(sctx);
-            while (recv(socket_fd, recvdata, 1024, MSG_DONTWAIT) > 0) {
-                // php_printf("cache data:%s\n", recvdata);
-            }
+            while (recv(socket_fd, recvdata, 1024, MSG_DONTWAIT) > 0) {}
             if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
-                // php_printf("use coonect\n");
                 needConnect = 0;
             }
         }
@@ -155,7 +180,6 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, 
 
 
     if (needConnect == 1) {
-        // php_printf("new coonect\n");
         struct sockaddr_in servaddr;
         if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
             // printf("创建网络连接失败, socket error!\n");

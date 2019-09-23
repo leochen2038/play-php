@@ -152,6 +152,7 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, 
 size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char *recv);
 void play_socket_cleanup_with_protocol(play_socket_ctx *sctx);
 void play_socket_cleanup_and_close(play_socket_ctx *sctx, int persisent);
+size_t socket_read(int socketfd, char *buffer, int length);
 
 
 /* play_fastcgi */

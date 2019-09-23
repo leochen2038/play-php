@@ -110,7 +110,6 @@ PHP_METHOD(NetKit, socket_fastcgi)
         response = play_fastcgi_get_response(client, &response_size);
         play_socket_cleanup_and_close(client, 0);
         if (response == NULL && response_size == 0) {
-            //play_socket_cleanup_and_close(client);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not get response from %s:%d", Z_STRVAL_P(host), port);
             RETURN_NULL();
         }
@@ -124,6 +123,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
 
 PHP_METHOD(NetKit, socket_protocol)
 {
+    int result;
     long port = 0;
     long timeout = 0;
     unsigned char respond = 1;
@@ -169,8 +169,12 @@ PHP_METHOD(NetKit, socket_protocol)
     play_get_micro_uqid(request_id, sctx->local_ip_hex, getpid());
     play_socket_send_with_protocol_v1(sctx, request_id, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
     if (respond) {
-        play_socket_recv_with_protocol_v1(sctx);
-        if (sctx->read_buf != NULL) {
+        result = play_socket_recv_with_protocol_v1(sctx);
+        if (result < 0 || sctx->read_buf == NULL ) {
+            play_socket_cleanup_and_close(sctx, 1);
+            play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
+            RETURN_NULL();
+        } else {
             int data_len = 0;
             char reponse_id[33];
             reponse_id[32] = 0;

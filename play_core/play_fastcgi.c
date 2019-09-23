@@ -159,7 +159,6 @@ unsigned char * play_fastcgi_get_response(play_socket_ctx *sctx, int *response_s
         if (fastcgi_read_header(sctx->socket_fd, &response_header) == -1) {
             return NULL;
         }
-
         switch (response_header.type) {
             case FCGI_TYPE_STDOUT:
             case FCGI_TYPE_STDERR: {
@@ -169,7 +168,6 @@ unsigned char * play_fastcgi_get_response(play_socket_ctx *sctx, int *response_s
                 length = (response_header.content_length_b1 << 8) + response_header.content_length_b0;
                 padding = response_header.padding_length;
                 total += length; /* total bytes */
-
                 if (!response) {
                     response = malloc(total);
                 } else {
@@ -178,6 +176,9 @@ unsigned char * play_fastcgi_get_response(play_socket_ctx *sctx, int *response_s
 
                 ret = fastcgi_read_body(sctx->socket_fd, response + (total - length), length, padding);
                 if (ret == -1) {
+                    if (response != NULL) {
+                        free(response);
+                    }
                     return NULL;
                 }
                 break;
@@ -185,6 +186,9 @@ unsigned char * play_fastcgi_get_response(play_socket_ctx *sctx, int *response_s
 
             case FCGI_TYPE_END_REQUEST: {
                 if (fastcgi_read_end_request(sctx->socket_fd) == -1) {
+                    if (response != NULL) {
+                        free(response);
+                    }
                     return NULL;
                 }
                 exit_flag = 1;
@@ -195,7 +199,6 @@ unsigned char * play_fastcgi_get_response(play_socket_ctx *sctx, int *response_s
     *response_size = total;
     return response;
 }
-
 
 
 static void play_fastcgi_init_kv_body(unsigned char *buf, int *len, unsigned char *key, int klen, unsigned char *val, int vlen)
@@ -257,17 +260,17 @@ static int fastcgi_read_header(int fd, fcgi_header *header)
 
 static int fastcgi_read_body(int fd, char *buffer, int length, int padding)
 {
-    int nread;
+    int result;
     char temp[8];
 
-    nread = read(fd, buffer, length);
-    if (nread != length) {
+    result = socket_read(fd, buffer, length);
+    if (result < 0) {
         return -1;
     }
 
     if (padding > 0 && padding <= 8) {
-        nread = read(fd, temp, padding);
-        if (nread != padding) {
+        result = socket_read(fd, temp, padding);
+        if (result < 0) {
             return -1;
         }
     }
