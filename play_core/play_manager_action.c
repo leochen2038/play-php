@@ -87,6 +87,9 @@ static play_string* play_manager_action_get_token(FILE *fp)
     while ((c = fgetc(fp)) != EOF) {
         switch (c) {
             case ',':
+                if (str->len > 0) {
+                    str->val[str->len++] = c;
+                }
                 break;
             case '#':
                 while (((c = fgetc(fp)) != '\n'));
@@ -208,26 +211,50 @@ static void play_manager_action_add(play_action_hashtable **ht, play_action *act
  */
 static void play_manager_action_parse_tokens(play_action_hashtable **ht, tokenList *tokens, const char *file, struct stat *s)
 {
-    int i = 0;
+
+    play_string *tmp;
+    int i = 0, j = 0;
     play_processor *curp = NULL;
+    play_string *actname = play_string_new_with_size(256);
+
     for (i = 0; i < tokens->length; i++) {
         play_string *p = tokens->list[i];
         if (memcmp(p->val, "{", 1) == 0 && curp == NULL && i != 0) {
-            play_action *act = play_manager_action_new_action(tokens->list[i-1]);
-            act->file = play_string_new_with_chars(file, strlen(file));
-            act->mtime = s->st_mtime;
-            play_manager_action_add(ht, act);
-
+            tmp = tokens->list[i-1];
             p = tokens->list[++i];
+
             if (memcmp(p->val, "}", 1) == 0) {
                 curp = NULL;
-                continue;
+            } else {
+                curp = calloc(1, sizeof(play_processor));
+                curp->nextCount = 0;
+                play_manager_action_parse_processor(p, curp);
             }
 
-            act->proc = calloc(1, sizeof(play_processor));
-            act->proc->nextCount = 0;
-            play_manager_action_parse_processor(p, act->proc);
-            curp = act->proc;
+            // 分析出多个actname
+            for (j = 0; j < tmp->len; j++) {
+                if (tmp->val[j] == ' '){
+                    continue;
+                }
+                if (tmp->val[j] == ',' && actname->len > 0)  {
+                    play_action *act = play_manager_action_new_action(actname);
+                    act->file = play_string_new_with_chars(file, strlen(file));
+                    act->mtime = s->st_mtime;
+                    act->proc = curp;
+                    play_manager_action_add(ht, act);
+                    play_string_reset(actname);
+                } else if (tmp->val[j] != ',') {
+                    play_string_append(actname, &tmp->val[j], 1);
+                }
+            }
+            if (actname->len > 0) {
+                play_action *act = play_manager_action_new_action(actname);
+                act->file = play_string_new_with_chars(file, strlen(file));
+                act->mtime = s->st_mtime;
+                act->proc = curp;
+                play_manager_action_add(ht, act);
+                play_string_reset(actname);
+            }
             continue;
         }
         if (memcmp(p->val, "(", 1) == 0 && curp != NULL) {
@@ -266,6 +293,8 @@ static void play_manager_action_parse_tokens(play_action_hashtable **ht, tokenLi
             continue;
         }
     }
+
+    play_string_free(actname);
 }
 
 /**
