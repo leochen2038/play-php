@@ -70,7 +70,7 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
 
     result = socket_read(sctx->socket_fd, sctx->read_buf, size);
     if (result != size) {
-        return -1;
+        return -2;
     }
     return 1;
 //    while ((rcount = read(sctx->socket_fd, sctx->read_buf+sctx->read_buf_rcount, size))) {
