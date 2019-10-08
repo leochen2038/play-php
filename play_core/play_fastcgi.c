@@ -251,11 +251,7 @@ static void play_fastcgi_init_begin_request_body(fcgi_begin_request_body *body, 
 
 static int fastcgi_read_header(int fd, fcgi_header *header)
 {
-    if (read(fd, header, FCGI_HEADER_LENGTH) != FCGI_HEADER_LENGTH) {
-        return -1;
-    }
-
-    return 0;
+    return socket_read(fd, header, FCGI_HEADER_LENGTH);
 }
 
 static int fastcgi_read_body(int fd, char *buffer, int length, int padding)
@@ -281,10 +277,5 @@ static int fastcgi_read_body(int fd, char *buffer, int length, int padding)
 static int fastcgi_read_end_request(int fd)
 {
     fcgi_end_request_body body;
-
-    if (read(fd, &body, sizeof(body)) != sizeof(body)) {
-        return -1;
-    }
-
-    return 0;
+    return socket_read(fd, &body, sizeof(body));
 }
