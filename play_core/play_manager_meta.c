@@ -290,15 +290,28 @@ void play_manager_meta_create_strategy(const char *filename, play_meta *meta, xm
         xmlChar *type = xmlGetProp(p, "type");
         xmlChar *router = xmlGetProp(p, "router");
         xmlChar *engine = xmlGetProp(p, "engine");
+        xmlChar *database = xmlGetProp(p, "database");
+        xmlChar *table = xmlGetProp(p, "table");
 
         meta->storage = calloc(1, sizeof(play_meta_storage));
         meta->storage->type = play_string_new_with_chars(type, strlen(type));
         meta->storage->router = play_string_new_with_chars(router, strlen(router));
-        meta->storage->engine = play_string_new_with_chars((char*)engine, strlen(engine));
+        if (engine != NULL) {
+            meta->storage->engine = play_string_new_with_chars(engine, strlen(engine));
+        }
+        if (database != NULL) {
+            meta->storage->database = play_string_new_with_chars(database, strlen(database));
+        }
+        if (table != NULL) {
+            meta->storage->table = play_string_new_with_chars(table, strlen(table));
+        }
 
         xmlFree(type);
         xmlFree(router);
         xmlFree(engine);
+        xmlFree(database);
+        xmlFree(table);
+
     }
 }
 
@@ -402,6 +415,9 @@ static void play_manager_meta_free_meta(play_meta *meta)
     play_string_free(meta->storage->type);
     play_string_free(meta->storage->router);
     play_string_free(meta->storage->engine);
+    play_string_free(meta->storage->table);
+    play_string_free(meta->storage->database);
+
     free(meta->storage);
 
     if (meta->fields != NULL) {

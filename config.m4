@@ -83,6 +83,7 @@ if test "$PHP_PLAY" != "no"; then
         play_interface/play_interface_query.c \
         play_interface/play_interface_render_abstract.c \
         play_interface/play_interface_netkit.c \
+        play_interface/play_interface_meta.c \
         play_interface/play_interface_utils.c,
     $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 

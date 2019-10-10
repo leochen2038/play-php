@@ -70,12 +70,19 @@ PHP_METHOD(DB, __callStatic)
         }
     }
 
-
     object_init_ex(return_value, play_interface_query_ce);
     zend_call_method_with_0_params(return_value, play_interface_query_ce, NULL, "__construct", NULL);
     zend_update_property_stringl(play_interface_query_ce, return_value, "module", 6, meta->module->val, meta->module->len);
     zend_update_property_stringl(play_interface_query_ce, return_value, "name", 4, meta->name->val,  meta->name->len);
     zend_update_property_stringl(play_interface_query_ce, return_value, "metaName", 8, Z_STRVAL_P(method)+4, Z_STRLEN_P(method) - 4);
+
+    if (meta->storage->database != NULL) {
+        zend_update_property_stringl(play_interface_query_ce, return_value, "database", 8, meta->storage->database->val, meta->storage->database->len);
+    }
+
+    if (meta->storage->table != NULL) {
+        zend_update_property_stringl(play_interface_query_ce, return_value, "table", 5, meta->storage->table->val, meta->storage->table->len);
+    }
 
     if(memcmp(meta->storage->type->val, "static", 6) == 0) {
         zend_update_property_stringl(play_interface_query_ce, return_value, "_router", 7, class_lowercase, meta->storage->router->len);

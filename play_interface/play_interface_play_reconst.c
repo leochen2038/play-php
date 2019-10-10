@@ -17,7 +17,7 @@ static int play_interface_play_reconst_create_processor_mkdir(play_processor *p)
 static play_processor * play_interface_play_reconst_check_processor_loop(play_processor *p);
 static void play_interface_play_reconst_create_db_api(play_meta_hashtable *ht);
 static void play_interface_play_reconst_create_metas_api(play_meta_hashtable *ht);
-static void play_interface_play_recons_create_condit(const char *condit, const char *field, const char *type, const char *note, play_string *src);
+static void play_interface_play_recons_create_condit(const char *name, const char *condit, const char *field, const char *type, const char *note, play_string *src);
 static void play_interface_play_reconst_check_processor(play_action_hashtable *ht);
 
 void play_interface_play_reconst()
@@ -163,53 +163,86 @@ void play_interface_play_reconst_create_db_api(play_meta_hashtable *ht)
 void play_interface_play_reconst_create_metas_api(play_meta_hashtable *ht)
 {
     char code[1024];
+    play_meta_field *field;
     play_string *src = play_string_new_with_size(1048576);
 
     char fileName[1024];
     play_meta_hashtable *item, *tmp;
     HASH_ITER(hh, ht, item, tmp) {
         sprintf(fileName, "%s/library/play/Meta.%s.api.php", gconfig.app_root, item->meta->funcName->val);
-        sprintf(code, "<?php\nclass Query_%s extends Query\n{\n", item->meta->funcName->val);
+
+        // step 1.1 生成Meta类文档
+        sprintf(code, "<?php\n/**\n * Class Meta_%s\n * @property %s|%s %s\n", item->meta->funcName->val, item->meta->key->type->val, item->meta->key->note->val, item->meta->key->funcName->val);
+        play_string_append(src, code, strlen(code));
+        for (field = item->meta->fields; field != NULL; field = field->next) {
+            sprintf(code, " * @property %s|%s %s;\n", field->type->val, field->note->val, field->funcName->val);
+            play_string_append(src, code, strlen(code));
+        }
+        play_string_append(src, " */", 3);
+
+        // step 1.2 生成Meta类及成员属性
+        sprintf(code, "\nclass Meta_%s\n{\n", item->meta->funcName->val);
         play_string_append(src, code, strlen(code));
 
-        sprintf(code, "    /** %s */\n", item->meta->key->note->val);
+        sprintf(code, "    /** @var %s %s %s */\n    public $%s;\n\n", item->meta->key->type->val, item->meta->key->funcName->val, item->meta->key->note->val, item->meta->key->funcName->val);
+        play_string_append(src, code, strlen(code));
+
+        for (field = item->meta->fields; field != NULL; field = field->next) {
+            sprintf(code, "    /** @var %s %s %s */\n    public $%s;\n\n", field->type->val, field->funcName->val, field->note->val, field->funcName->val);
+            play_string_append(src, code, strlen(code));
+        }
+        play_string_append(src, "}\n", 2);
+
+        //step 2.0 生成Query类
+        sprintf(code, "\nclass Query_%s extends Query\n{\n", item->meta->funcName->val);
+        play_string_append(src, code, strlen(code));
+
+        sprintf(code, "    /** @var %s|%s */\n", item->meta->key->type->val, item->meta->key->note->val);
         play_string_append(src, code, strlen(code));
 
         sprintf(code, "    public $%s;\n", item->meta->key->funcName->val);
         play_string_append(src, code, strlen(code));
 
         if (memcmp(item->meta->key->type->val, "auto", 4) != 0) {
-            sprintf(code, "    /** %s */\n", item->meta->key->note->val);
+            sprintf(code, "    /** @return Query_%s|%s */\n", item->meta->funcName->val, item->meta->key->note->val);
             play_string_append(src, code, strlen(code));
             sprintf(code, "    public function set_%s($val){return $this;}\n", item->meta->key->funcName->val);
             play_string_append(src, code, strlen(code));
         }
 
-        play_interface_play_recons_create_condit("where", item->meta->key->funcName->val, item->meta->key->type->val, item->meta->key->note->val, src);
-        play_interface_play_recons_create_condit("or", item->meta->key->funcName->val, item->meta->key->type->val, item->meta->key->note->val, src);
+        play_interface_play_recons_create_condit(item->meta->funcName->val, "where", item->meta->key->funcName->val, item->meta->key->type->val, item->meta->key->note->val, src);
+        play_interface_play_recons_create_condit(item->meta->funcName->val, "or", item->meta->key->funcName->val, item->meta->key->type->val, item->meta->key->note->val, src);
 
-        play_meta_field *field;
+
         for (field = item->meta->fields; field != NULL; field = field->next) {
-            sprintf(code, "\n    /** %s */", field->note->val);
+            sprintf(code, "\n    /** @var %s|%s */",field->type->val, field->note->val);
             play_string_append(src, code, strlen(code));
 
             sprintf(code, "\n    public $%s;\n", field->funcName->val);
             play_string_append(src, code, strlen(code));
 
-            sprintf(code, "    /** %s */\n", field->note->val);
+            sprintf(code, "\n    /** @return Query_%s|%s */\n",item->meta->funcName->val, field->note->val);
             play_string_append(src, code, strlen(code));
 
             sprintf(code, "    public function set_%s($val){return $this;}\n", field->funcName->val);
             play_string_append(src, code, strlen(code));
 
-            play_interface_play_recons_create_condit("where", field->funcName->val, field->type->val, field->note->val, src);
-            play_interface_play_recons_create_condit("or", field->funcName->val, field->type->val, field->note->val, src);
+            play_interface_play_recons_create_condit(item->meta->funcName->val, "where", field->funcName->val, field->type->val, field->note->val, src);
+            play_interface_play_recons_create_condit(item->meta->funcName->val, "or", field->funcName->val, field->type->val, field->note->val, src);
         }
 
-        sprintf(code, "    public function orderBy($val,$desc){return $this;}\n", item->meta->key->funcName->val);
+        sprintf(code, "    public function orderBy($val, $desc){return $this;}\n");
         play_string_append(src, code, strlen(code));
-        sprintf(code, "    public function limit($start,$count){return $this;}\n", item->meta->key->funcName->val);
+
+        sprintf(code, "    public function limit($start, $count){return $this;}\n");
         play_string_append(src, code, strlen(code));
+
+        sprintf(code, "    /** @return Meta_%s */\n    public function getOne($fields = null){return new Meta_%s;}\n",item->meta->funcName->val, item->meta->funcName->val);
+        play_string_append(src, code, strlen(code));
+
+        sprintf(code, "    /** @return Meta_%s[] */\n    public function getList($fields = null){return [new Meta_%s];}\n",item->meta->funcName->val, item->meta->funcName->val);
+        play_string_append(src, code, strlen(code));
+
 
         play_string_append(src, "}", 1);
         FILE *filefd = fopen(fileName, "w+");
@@ -222,60 +255,60 @@ void play_interface_play_reconst_create_metas_api(play_meta_hashtable *ht)
     play_string_free(src);
 }
 
-static void play_interface_play_recons_create_condit(const char *condit, const char *field, const char *type, const char *note, play_string *src)
+static void play_interface_play_recons_create_condit(const char *name, const char *condit, const char *field, const char *type, const char *note, play_string *src)
 {
     char code[258];
 
     if (note != NULL) {
-        sprintf(code, "    /** %s */\n", note);
+        sprintf(code, "    /** @return Query_%s|%s */\n", name, note);
         play_string_append(src, code, strlen(code));
     }
     sprintf(code, "    public function %s_%s_Equal($val){return $this;}\n",condit, field);
     play_string_append(src, code, strlen(code));
 
     if (note != NULL) {
-        sprintf(code, "    /** %s */\n", note);
+        sprintf(code, "    /** @return Query_%s|%s */\n", name, note);
         play_string_append(src, code, strlen(code));
     }
     sprintf(code, "    public function %s_%s_NotEqual($val){return $this;}\n", condit, field);
     play_string_append(src, code, strlen(code));
 
     if (note != NULL) {
-        sprintf(code, "    /** %s */\n", note);
+        sprintf(code, "    /** @return Query_%s|%s */\n", name, note);
         play_string_append(src, code, strlen(code));
     }
     sprintf(code, "    public function %s_%s_In($val){return $this;}\n", condit, field);
     play_string_append(src, code, strlen(code));
 
     if (note != NULL) {
-        sprintf(code, "    /** %s */\n", note);
+        sprintf(code, "    /** @return Query_%s|%s */\n", name, note);
         play_string_append(src, code, strlen(code));
     }    sprintf(code, "    public function %s_%s_NotIn($val){return $this;}\n", condit, field);
     play_string_append(src, code, strlen(code));
 
     if (note != NULL) {
-        sprintf(code, "    /** %s */\n", note);
+        sprintf(code, "    /** @return Query_%s|%s */\n", name, note);
         play_string_append(src, code, strlen(code));
     }
     sprintf(code, "    public function %s_%s_Like($val){return $this;}\n", condit, field);
     play_string_append(src, code, strlen(code));
 
     if (note != NULL) {
-        sprintf(code, "    /** %s */\n", note);
+        sprintf(code, "    /** @return Query_%s|%s */\n", name, note);
         play_string_append(src, code, strlen(code));
     }
     sprintf(code, "    public function %s_%s_Between($start, $end){return $this;}\n", condit, field);
     play_string_append(src, code, strlen(code));
 
     if (note != NULL) {
-        sprintf(code, "    /** %s */\n", note);
+        sprintf(code, "    /** @retrun Query_%s|%s */\n", name, note);
         play_string_append(src, code, strlen(code));
     }
     sprintf(code, "    public function %s_%s_Less($val){return $this;}\n", condit, field);
     play_string_append(src, code, strlen(code));
 
     if (note != NULL) {
-        sprintf(code, "    /** %s */\n", note);
+        sprintf(code, "    /** @retrun Query_%s|%s */\n", name, note);
         play_string_append(src, code, strlen(code));
     }
     sprintf(code, "    public function %s_%s_Greater($val){return $this;}\n", condit, field);

@@ -107,6 +107,7 @@ PHP_MINIT_FUNCTION(play)
     play_interface_query_register(module_number);
     play_interface_render_abstract_register(module_number);
 	play_interface_netkit_register(module_number);
+    play_interface_meta_class_register(module_number);
 	return SUCCESS;
 }
 /* }}} */

@@ -101,6 +101,8 @@ typedef struct {
     play_string *type;
     play_string *router;
     play_string *engine;
+    play_string *database;
+    play_string *table;
 }play_meta_storage;
 
 typedef struct{

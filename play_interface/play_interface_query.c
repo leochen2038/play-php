@@ -34,6 +34,8 @@ void play_interface_query_register(int _module_number)
 
     zend_declare_property_null(play_interface_query_ce, "module", 6, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
     zend_declare_property_null(play_interface_query_ce, "name", 4, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+    zend_declare_property_null(play_interface_query_ce, "database", 8, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+    zend_declare_property_null(play_interface_query_ce, "table", 5, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
     zend_declare_property_null(play_interface_query_ce, "where", 5, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
     zend_declare_property_null(play_interface_query_ce, "or", 2, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
     zend_declare_property_null(play_interface_query_ce, "field", 5, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
@@ -230,13 +232,33 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
         play_interface_query_clean_property(obj);
         return retval;
     } else if (memcmp(action->val, "getOne", 6) == 0) {
-        zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
-        if (Z_TYPE_P(router) == IS_STRING) {
-            run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "getone", retval, 1, obj, NULL);
+        int count = 0;
+        zval *_where = zend_read_property(play_interface_query_ce, obj, "where", 5, 1, NULL);
+        count = zend_hash_num_elements(Z_ARRVAL_P(_where));
+        if (count == 0) {
+            object_init_ex(retval, play_interface_meta_ce);
+            zval *_property = zend_read_property(play_interface_query_ce, obj, "fields", 6, 1, NULL);
+
+            int i;
+            zval *f_item, *v, *n;
+            count = zend_hash_num_elements(Z_ARRVAL_P(_property));
+            zend_hash_internal_pointer_reset(Z_ARRVAL_P(_property));
+            for (i = 0; i < count; i++) {
+                f_item = zend_hash_get_current_data(Z_ARRVAL_P(_property));
+                v = zend_hash_str_find(Z_ARRVAL_P(f_item), "default", 7);
+                n = zend_hash_str_find(Z_ARRVAL_P(f_item), "funcName", 8);
+                zend_update_property(play_interface_meta_ce, retval, Z_STRVAL_P(n), Z_STRLEN_P(n), v);
+                zend_hash_move_forward(Z_ARRVAL_P(_property));
+            }
         } else {
-            zend_call_method_with_1_params(router, Z_OBJCE_P(router), NULL, "getone", retval, obj);
+            zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
+            if (Z_TYPE_P(router) == IS_STRING) {
+                run_static_router_method(Z_STRVAL_P(router), Z_STRLEN_P(router), "getone", retval, 1, obj, NULL);
+            } else {
+                zend_call_method_with_1_params(router, Z_OBJCE_P(router), NULL, "getone", retval, obj);
+            }
+            play_interface_query_clean_property(obj);
         }
-        play_interface_query_clean_property(obj);
         return retval;
     } else if (memcmp(action->val, "orderBy", 7) == 0) {
         zend_update_property(play_interface_query_ce, obj, "order", 5, arg);
