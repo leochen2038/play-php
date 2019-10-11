@@ -356,22 +356,23 @@ static void play_manager_meta_parse(play_meta_hashtable **ht, const char *filena
     play_manager_meta_create_strategy(filename, meta, proot->xmlChildrenNode->next->next);
     play_manager_meta_add(ht, meta);
 
+    // 生成meta类描述
     zend_class_entry class;
     char className[128];
     snprintf(className, 128, "Meta_%s", meta->funcName->val);
     INIT_CLASS_ENTRY(class, className, NULL);
     meta->ce = play_struct_meta_class(&class, 0);
     play_meta_field *field;
-    zend_declare_property_null(meta->ce, meta->key->funcName->val, meta->key->funcName->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+    zend_declare_property_null(meta->ce, meta->key->name->val, meta->key->name->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
     for (field = meta->fields; field != NULL; field = field->next) {
         if (field->type->len == 3 && memcmp(field->type->val, "int", 3) == 0) {
-            zend_declare_property_long(meta->ce, field->funcName->val, field->funcName->len, atoi(field->defv->val), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+            zend_declare_property_long(meta->ce, field->name->val, field->name->len, atoi(field->defv->val), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
         } else if (field->type->len == 6 && memcmp(field->type->val, "string", 6) == 0) {
-            zend_declare_property_stringl(meta->ce, field->funcName->val, field->funcName->len, field->defv->val, field->defv->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+            zend_declare_property_stringl(meta->ce, field->name->val, field->name->len, field->defv->val, field->defv->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
         } else if (field->type->len == 5 && memcmp(field->type->val, "float", 5) == 0) {
-            zend_declare_property_double(meta->ce, field->funcName->val, field->funcName->len, atoi(field->defv->val), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+            zend_declare_property_double(meta->ce, field->name->val, field->name->len, atoi(field->defv->val), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
         } else {
-            zend_declare_property_null(meta->ce, field->funcName->val, field->funcName->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+            zend_declare_property_null(meta->ce, field->name->val, field->name->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
         }
     }
 

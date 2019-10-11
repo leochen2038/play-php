@@ -172,10 +172,10 @@ void play_interface_play_reconst_create_metas_api(play_meta_hashtable *ht)
         sprintf(fileName, "%s/library/play/Meta.%s.api.php", gconfig.app_root, item->meta->funcName->val);
 
         // step 1.1 生成Meta类文档
-        sprintf(code, "<?php\n/**\n * Class Meta_%s\n * @property %s|%s %s\n", item->meta->funcName->val, item->meta->key->type->val, item->meta->key->note->val, item->meta->key->funcName->val);
+        sprintf(code, "<?php\n/**\n * Class Meta_%s\n * @property %s|%s %s\n", item->meta->funcName->val, item->meta->key->type->val, item->meta->key->note->val, item->meta->key->name->val);
         play_string_append(src, code, strlen(code));
         for (field = item->meta->fields; field != NULL; field = field->next) {
-            sprintf(code, " * @property %s|%s %s;\n", field->type->val, field->note->val, field->funcName->val);
+            sprintf(code, " * @property %s|%s %s;\n", field->type->val, field->note->val, field->name->val);
             play_string_append(src, code, strlen(code));
         }
         play_string_append(src, " */", 3);
@@ -184,11 +184,11 @@ void play_interface_play_reconst_create_metas_api(play_meta_hashtable *ht)
         sprintf(code, "\nclass Meta_%s\n{\n", item->meta->funcName->val);
         play_string_append(src, code, strlen(code));
 
-        sprintf(code, "    /** @var %s %s %s */\n    public $%s;\n\n", item->meta->key->type->val, item->meta->key->funcName->val, item->meta->key->note->val, item->meta->key->funcName->val);
+        sprintf(code, "    /** @var %s %s %s */\n    public $%s;\n\n", item->meta->key->type->val, item->meta->key->name->val, item->meta->key->note->val, item->meta->key->name->val);
         play_string_append(src, code, strlen(code));
 
         for (field = item->meta->fields; field != NULL; field = field->next) {
-            sprintf(code, "    /** @var %s %s %s */\n    public $%s;\n\n", field->type->val, field->funcName->val, field->note->val, field->funcName->val);
+            sprintf(code, "    /** @var %s %s %s */\n    public $%s;\n\n", field->type->val, field->name->val, field->note->val, field->name->val);
             play_string_append(src, code, strlen(code));
         }
         play_string_append(src, "}\n", 2);

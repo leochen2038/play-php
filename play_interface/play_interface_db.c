@@ -76,7 +76,7 @@ PHP_METHOD(DB, __callStatic)
     zend_update_property_stringl(play_interface_query_ce, return_value, "name", 4, meta->name->val,  meta->name->len);
     zend_update_property_stringl(play_interface_query_ce, return_value, "metaName", 8, Z_STRVAL_P(method)+4, Z_STRLEN_P(method) - 4);
 
-if (meta->storage->database != NULL) {
+    if (meta->storage->database != NULL) {
         zend_update_property_stringl(play_interface_query_ce, return_value, "database", 8, meta->storage->database->val, meta->storage->database->len);
     }
 
