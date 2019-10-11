@@ -243,6 +243,11 @@ void play_interface_play_reconst_create_metas_api(play_meta_hashtable *ht)
         sprintf(code, "    /** @return Meta_%s[] */\n    public function getList($fields = null){return [new Meta_%s];}\n",item->meta->funcName->val, item->meta->funcName->val);
         play_string_append(src, code, strlen(code));
 
+        sprintf(code, "    /** @return Meta_%s */\n    public function getMeta(){return new Meta_%s;}\n",item->meta->funcName->val, item->meta->funcName->val);
+        play_string_append(src, code, strlen(code));
+
+        sprintf(code, "    /** @return string|array */\n    public function save(...$meta){}\n");
+        play_string_append(src, code, strlen(code));
 
         play_string_append(src, "}", 1);
         FILE *filefd = fopen(fileName, "w+");

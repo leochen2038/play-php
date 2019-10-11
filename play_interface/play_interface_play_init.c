@@ -499,6 +499,8 @@ class Query\n\
     public function delete(){}\n\
     public function limit($start, $count){return $this;}\n\
     public function orderBy($field, $desc){return $this;}\n\
+    public function save(...$meta){}\n\
+    public function getMeta(){}\n\
 }\n\
 \n\
 abstract class Meta_Router_Abstract\n\
