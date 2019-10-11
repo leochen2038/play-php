@@ -5,6 +5,7 @@
 #ifndef PROJECT_PLAY_CORE_H
 #define PROJECT_PLAY_CORE_H
 
+#include <zend_interfaces.h>
 #include "../play_lib/uthash/uthash.h"
 
 /* play_string.c */
@@ -114,6 +115,7 @@ typedef struct{
     play_meta_field *key;
     play_meta_field *fields;
     play_meta_storage *storage;
+    zend_class_entry *ce;
 }play_meta;
 
 typedef struct _play_meta_hashtable{

@@ -234,22 +234,11 @@ static zval *play_interface_query_run_method(zval *obj, play_string *action, pla
     } else if (memcmp(action->val, "getOne", 6) == 0) {
         int count = 0;
         zval *_where = zend_read_property(play_interface_query_ce, obj, "where", 5, 1, NULL);
+        zval *_metaName = zend_read_property(play_interface_query_ce, obj, "metaName", 8, 1, NULL);
         count = zend_hash_num_elements(Z_ARRVAL_P(_where));
         if (count == 0) {
-            object_init_ex(retval, play_interface_meta_ce);
-            zval *_property = zend_read_property(play_interface_query_ce, obj, "fields", 6, 1, NULL);
-
-            int i;
-            zval *f_item, *v, *n;
-            count = zend_hash_num_elements(Z_ARRVAL_P(_property));
-            zend_hash_internal_pointer_reset(Z_ARRVAL_P(_property));
-            for (i = 0; i < count; i++) {
-                f_item = zend_hash_get_current_data(Z_ARRVAL_P(_property));
-                v = zend_hash_str_find(Z_ARRVAL_P(f_item), "default", 7);
-                n = zend_hash_str_find(Z_ARRVAL_P(f_item), "funcName", 8);
-                zend_update_property(play_interface_meta_ce, retval, Z_STRVAL_P(n), Z_STRLEN_P(n), v);
-                zend_hash_move_forward(Z_ARRVAL_P(_property));
-            }
+            play_meta *meta = play_manager_meta_get_by_chars(Z_STRVAL_P(_metaName), 0);
+            object_init_ex(retval, meta->ce);
         } else {
             zval *router = zend_read_property(play_interface_query_ce, obj, "_router", 7, 1, NULL);
             if (Z_TYPE_P(router) == IS_STRING) {

@@ -23,7 +23,7 @@ set(PHPEXT_SOURCE_FILES
         play_interface/play_interface_query.c
         play_interface/play_interface_render_abstract.c
         play_interface/play_interface_utils.c
-        play_interface/play_interface_netkit.c)
+        play_interface/play_interface_netkit.c play_interface/play_interface_meta.c)
 set(SOURCE_FILES
         main.c
         play_core/play_string.c

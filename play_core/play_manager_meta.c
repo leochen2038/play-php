@@ -15,6 +15,7 @@ static play_meta_hashtable *__play_manager_meta_project_list = NULL;
 static void play_manager_meta_refash_dir(play_meta_hashtable **ht, char *path);
 static void play_manager_meta_free_meta(play_meta *meta);
 static void play_manager_meta_free_meta_fields(play_meta_field *field);
+static zend_class_entry *play_struct_meta_class(zend_class_entry *orig_class_entry, uint32_t ce_flags);
 
 play_meta_hashtable *play_manager_meta_get_list_by_path(char *path)
 {
@@ -355,6 +356,25 @@ static void play_manager_meta_parse(play_meta_hashtable **ht, const char *filena
     play_manager_meta_create_strategy(filename, meta, proot->xmlChildrenNode->next->next);
     play_manager_meta_add(ht, meta);
 
+    zend_class_entry class;
+    char className[128];
+    snprintf(className, 128, "Meta_%s", meta->funcName->val);
+    INIT_CLASS_ENTRY(class, className, NULL);
+    meta->ce = play_struct_meta_class(&class, 0);
+    play_meta_field *field;
+    zend_declare_property_null(meta->ce, meta->key->funcName->val, meta->key->funcName->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+    for (field = meta->fields; field != NULL; field = field->next) {
+        if (field->type->len == 3 && memcmp(field->type->val, "int", 3) == 0) {
+            zend_declare_property_long(meta->ce, field->funcName->val, field->funcName->len, atoi(field->defv->val), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+        } else if (field->type->len == 6 && memcmp(field->type->val, "string", 6) == 0) {
+            zend_declare_property_stringl(meta->ce, field->funcName->val, field->funcName->len, field->defv->val, field->defv->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+        } else if (field->type->len == 5 && memcmp(field->type->val, "float", 5) == 0) {
+            zend_declare_property_double(meta->ce, field->funcName->val, field->funcName->len, atoi(field->defv->val), ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+        } else {
+            zend_declare_property_null(meta->ce, field->funcName->val, field->funcName->len, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR);
+        }
+    }
+
     xmlFreeDoc (pdoc);
     xmlCleanupParser();
     xmlMemoryDump();
@@ -462,4 +482,25 @@ play_meta *play_manager_meta_get_by_chars(char *name, int checknew)
         }
     }
     return item == NULL ? NULL : item->meta;
+}
+
+static zend_class_entry *play_struct_meta_class(zend_class_entry *orig_class_entry, uint32_t ce_flags)
+{
+    zend_class_entry *class_entry = malloc(sizeof(zend_class_entry));
+    zend_string *lowercase_name = zend_string_alloc(ZSTR_LEN(orig_class_entry->name), 1);
+    *class_entry = *orig_class_entry;
+
+    class_entry->type = 1;
+    zend_initialize_class_data(class_entry, 0);
+    class_entry->ce_flags = ce_flags | 0x100000;
+    class_entry->info.internal.module = EG(current_module);
+
+    if (class_entry->info.internal.builtin_functions) {
+        zend_register_functions(class_entry, class_entry->info.internal.builtin_functions, &class_entry->function_table, MODULE_PERSISTENT);
+    }
+
+    zend_str_tolower_copy(ZSTR_VAL(lowercase_name), ZSTR_VAL(orig_class_entry->name), ZSTR_LEN(class_entry->name));
+    lowercase_name = zend_new_interned_string(lowercase_name);
+    zend_string_release(lowercase_name);
+    return class_entry;
 }
