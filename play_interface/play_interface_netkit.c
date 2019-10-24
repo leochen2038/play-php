@@ -186,6 +186,7 @@ PHP_METHOD(NetKit, socket_protocol)
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", request_id, reponse_id);
                 RETURN_NULL();
             }
+
             if (data_len > sctx->read_buf_ncount) {
                 play_socket_cleanup_and_close(sctx, 1);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "data len error:%d, %d", data_len, sctx->read_buf_ncount);
