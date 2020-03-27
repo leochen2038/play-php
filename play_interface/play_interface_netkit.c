@@ -16,6 +16,7 @@ zend_class_entry *play_interface_netkit_ce;
 
 const zend_function_entry  play_interface_net_functions[] = {
     PHP_ME(NetKit, socket_protocol, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(NetKit, socket_protocol_v2, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(NetKit, socket_fastcgi, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     {NULL, NULL, NULL}
 };
