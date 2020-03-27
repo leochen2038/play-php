@@ -9,6 +9,7 @@
 #include <zend_interfaces.h>
 
 PHP_METHOD(NetKit, socket_protocol);
+PHP_METHOD(NetKit, socket_protocol_v2);
 PHP_METHOD(NetKit, socket_fastcgi);
 
 zend_class_entry *play_interface_netkit_ce;
@@ -168,6 +169,91 @@ PHP_METHOD(NetKit, socket_protocol)
     char request_id[33];
     play_get_micro_uqid(request_id, sctx->local_ip_hex, getpid());
     play_socket_send_with_protocol_v1(sctx, request_id, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
+    if (respond) {
+        result = play_socket_recv_with_protocol_v1(sctx);
+        if (result < 0 || sctx->read_buf == NULL ) {
+            play_socket_cleanup_and_close(sctx, 1);
+            play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
+            RETURN_NULL();
+        } else {
+            int data_len = 0;
+            char reponse_id[33];
+            reponse_id[32] = 0;
+
+            memcpy(&data_len, sctx->read_buf+1, 4);
+            memcpy(reponse_id, sctx->read_buf+5, 32);
+            if (memcmp(reponse_id, request_id, 32) != 0) {
+                play_socket_cleanup_and_close(sctx, 1);
+                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", request_id, reponse_id);
+                RETURN_NULL();
+            }
+
+            if (data_len > sctx->read_buf_ncount) {
+                play_socket_cleanup_and_close(sctx, 1);
+                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "data len error:%d, %d", data_len, sctx->read_buf_ncount);
+                RETURN_NULL();
+            }
+
+            ZVAL_STRINGL(return_value, sctx->read_buf+37, data_len);
+            play_socket_cleanup_with_protocol(sctx);
+        }
+    }
+}
+
+PHP_METHOD(NetKit, socket_protocol_v2)
+{
+    int callerId = 0;
+    int result;
+    long port = 0;
+    long timeout = 0;
+    unsigned char respond = 1;
+    zval *host, *cmd, *message;
+
+    #ifndef FAST_ZPP
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "lzlzz|bl", &callerId, &host, &port, $cmd, &message, &respond, &timeout) == FAILURE) {
+        return;
+    }
+    #else
+    ZEND_PARSE_PARAMETERS_START(5, 7)
+            Z_PARAM_LONG(callerId)
+            Z_PARAM_ZVAL(host)
+            Z_PARAM_LONG(port)
+            Z_PARAM_ZVAL(cmd)
+            Z_PARAM_ZVAL(message)
+            Z_PARAM_OPTIONAL
+            Z_PARAM_BOOL(respond)
+            Z_PARAM_LONG(timeout)
+        ZEND_PARSE_PARAMETERS_END();
+    #endif
+
+    if (callerId <= 0 || callerId > 65535) {
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "callerId length must in 1, 65535");
+        RETURN_NULL();
+    }
+    if (port <= 0) {
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "port must greater than zero");
+        RETURN_NULL();
+    }
+    if (Z_TYPE_P(host) != IS_STRING || Z_STRLEN_P(host) <= 0) {
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "host must be string, not empty");
+        RETURN_NULL();
+    }
+    if (Z_STRLEN_P(cmd) <= 0 || Z_STRLEN_P(cmd) >= 256) {
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "cmd length must in 1, 255");
+        RETURN_NULL();
+    }
+
+    play_socket_ctx *sctx = NULL;
+    timeout = timeout > 0 ? timeout : 1;
+    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
+        play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
+        RETURN_NULL();
+    }
+
+    char request_id[33];
+    play_get_micro_uqid(request_id, sctx->local_ip_hex, getpid());
+    play_socket_send_with_protocol_v2(sctx, (unsigned short)callerId, request_id, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
+
     if (respond) {
         result = play_socket_recv_with_protocol_v1(sctx);
         if (result < 0 || sctx->read_buf == NULL ) {

@@ -42,6 +42,37 @@ size_t play_socket_send_with_protocol_v1(play_socket_ctx *sctx, char *request_id
     return ret;
 }
 
+size_t play_socket_send_with_protocol_v2(play_socket_ctx *sctx, unsigned short callerId, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond)
+{
+    /* 协议：4个字节(==>协议头),4个字节（数据长度）, 1个字节(协议版本), 1个字节(是否需要响应), 2个字节(调用方ID),  1个字节(action长度), 4个字节(内容长度), 32字节(请求唯一标识), action, 内容 */
+    int ret = 0;
+    char version = 0x02;
+    int send_size = cmd_len + data_len + 49;
+    int dataa_size = send_size - 8;
+    char send_data[send_size];
+
+    memcpy(send_data, "==>>", 4);
+    memcpy(send_data+4, &dataa_size, 4);
+    memcpy(send_data+8, &version, 1);
+    memcpy(send_data+9, &respond, 1);
+    memcpy(send_data+10, &callerId, 2);
+    memcpy(send_data+12, &cmd_len, 1);
+    memcpy(send_data+13, &data_len, 4);
+    memcpy(send_data+17, request_id, 32);
+    memcpy(send_data+49, cmd, cmd_len);
+
+    if (data_len > 0) {
+        memcpy(send_data+49+cmd_len, data, data_len);
+    }
+
+    ret = send(sctx->socket_fd, send_data, send_size, 0);
+
+    if (ret != send_size) {
+        return ret;
+    }
+    return ret;
+}
+
 void play_socket_cleanup_with_protocol(play_socket_ctx *sctx)
 {
     if (sctx->read_buf != NULL) {
