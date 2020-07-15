@@ -125,21 +125,14 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
 size_t socket_read(int socketfd, char *buffer, int length) {
     int readCount = 0;
     int nread = 0;
-    int maxTryTime = 5;
-    int tryTime = 10;
 
-    for (readCount = 0; readCount < length; ) {
+    while (readCount < length) {
+        usleep(10);
         nread = read(socketfd, buffer + readCount, length - readCount);
-        if (nread == -1 && !(errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN)) {
+        if (nread <= 0 && !(errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN)) {
             return -1;
         }
         readCount += nread;
-        if (readCount != length) {
-            if (tryTime++ > maxTryTime) {
-                return -1;
-            }
-            usleep(tryTime);
-        }
     }
 
     return readCount;
