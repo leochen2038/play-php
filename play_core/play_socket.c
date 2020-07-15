@@ -123,10 +123,10 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
 }
 
 size_t socket_read(int socketfd, char *buffer, int length) {
-    int readCount;
+    int readCount = 0;
     int nread = 0;
-    int maxTryTime = 3;
-    int tryTime = 0;
+    int maxTryTime = 5;
+    int tryTime = 10;
 
     for (readCount = 0; readCount < length; ) {
         nread = read(socketfd, buffer + readCount, length - readCount);
