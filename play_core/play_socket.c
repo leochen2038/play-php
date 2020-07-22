@@ -86,18 +86,18 @@ void play_socket_cleanup_with_protocol(play_socket_ctx *sctx)
 size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
 {
     int size, rcount, result;
-    char header[4];
+    char header[8];
 
-    rcount = socket_read(sctx->socket_fd, header, 4);
+    rcount = socket_read(sctx->socket_fd, header, 8);
     if (rcount < 1) {
-        return -3;
+        return -errno - 1000;
     }
 
     if (memcmp(header, "==>>", 4) != 0) {
         return -1;
     }
 
-    rcount = read(sctx->socket_fd, &size, 4);
+    memcpy(&size, header+4, 4);
     sctx->read_buf = malloc(size+1);
     sctx->read_buf[size] = 0;
     sctx->read_buf_ncount = size;
@@ -132,11 +132,14 @@ size_t socket_read(int socketfd, char *buffer, int length) {
 
     while (readCount < length) {
         usleep(10);
-        nread = read(socketfd, buffer + readCount, length - readCount);
-        if (nread <= 0 && !(errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN)) {
+        nread = recv(socketfd, buffer + readCount, length - readCount, MSG_WAITALL);
+        if (nread > 0) {
+            readCount += nread;
+            continue;
+        }
+        if (nread <= 0 && errno != EINTR) {
             return -1;
         }
-        readCount += nread;
     }
 
     return readCount;
