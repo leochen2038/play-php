@@ -108,22 +108,6 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
         return -2;
     }
     return 1;
-//    while ((rcount = read(sctx->socket_fd, sctx->read_buf+sctx->read_buf_rcount, size))) {
-//        if (rcount > 0) {
-//            sctx->read_buf_rcount += rcount;
-//            if (sctx->read_buf_rcount >= sctx->read_buf_ncount) {
-//                break;
-//            } else {
-//                size -= rcount;
-//            }
-//        } else if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
-//            // php_printf("\nwait\n");
-//            usleep(10);
-//        } else {
-//            // 读取错误
-//            // php_printf("read error\n");
-//        }
-//    }
 }
 
 size_t socket_read(int socketfd, char *buffer, int length) {
@@ -131,7 +115,6 @@ size_t socket_read(int socketfd, char *buffer, int length) {
     int nread = 0;
 
     while (readCount < length) {
-        usleep(10);
         nread = recv(socketfd, buffer + readCount, length - readCount, MSG_WAITALL);
         if (nread > 0) {
             readCount += nread;
@@ -192,6 +175,7 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, 
 {
     int needConnect = 1;
     char cipv4[21];
+    char checkSocket;
     int socket_fd = 0;
     play_socket_ctx *sctx = NULL;
 
@@ -199,16 +183,15 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, 
     if (persisent) {
         HASH_FIND_STR(socket_hashtable, cipv4, sctx);
         if (sctx != NULL) {
-            char recvdata[1024];
             socket_fd = sctx->socket_fd;
             play_socket_cleanup_with_protocol(sctx);
-            while (recv(socket_fd, recvdata, 1024, MSG_DONTWAIT) > 0) {}
-            if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
+            if (recv(socket_fd, &checkSocket, 1, MSG_DONTWAIT) == -1 && errno == EAGAIN) {
                 needConnect = 0;
+            } else {
+                close(socket_fd);
             }
         }
     }
-
 
     if (needConnect == 1) {
         struct sockaddr_in servaddr;
