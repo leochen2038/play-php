@@ -87,7 +87,8 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
 {
     int size, rcount, result;
     char header[4];
-    rcount = read(sctx->socket_fd, header, 4);
+    //rcount = read(sctx->socket_fd, header, 4);
+    rcount = recv(sctx->socket_fd, header, 4, MSG_WAITALL)
 
     if (memcmp(header, "==>>", 4) != 0) {
         return -1;
