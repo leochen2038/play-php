@@ -120,7 +120,7 @@ size_t socket_read(int socketfd, char *buffer, int length) {
             readCount += nread;
             continue;
         }
-        if (nread <= 0 && errno != EINTR) {
+        if (nread <= 0 && !(errno == EINTR || errno == EAGAIN)) {
             return -1;
         }
     }
@@ -240,7 +240,7 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, 
 
 void play_socket_cleanup_and_close(play_socket_ctx *sctx, int persisent)
 {
-    if (persisent) {
+    if (persisent) {ng
         HASH_DEL(socket_hashtable, sctx);
     }
     close(sctx->socket_fd);
