@@ -240,7 +240,7 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, 
 
 void play_socket_cleanup_and_close(play_socket_ctx *sctx, int persisent)
 {
-    if (persisent) {ng
+    if (persisent) {
         HASH_DEL(socket_hashtable, sctx);
     }
     close(sctx->socket_fd);
