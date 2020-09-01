@@ -208,7 +208,7 @@ PHP_METHOD(NetKit, socket_protocol)
 
 PHP_METHOD(NetKit, socket_protocol_v2)
 {
-    int callerId = 0;
+    long callerId = 0;
     int result;
     long port = 0;
     long timeout = 0;
@@ -294,9 +294,9 @@ PHP_METHOD(NetKit, socket_protocol_v2)
 
 PHP_METHOD(NetKit, socket_protocol_v3)
 {
-    int callerId = 0;
+    long callerId = 0;
     int result;
-    int tagId = 0;
+    long tagId = 0;
     long port = 0;
     long timeout = 0;
     unsigned char respond = 1;
@@ -346,7 +346,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
 
     char request_id[33];
     play_get_micro_uqid(request_id, sctx->local_ip_hex, getpid());
-    play_socket_send_with_protocol_v3(sctx, callerId, tagId request_id, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
+    play_socket_send_with_protocol_v3(sctx, callerId, tagId, request_id, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
 
     if (respond) {
         result = play_socket_recv_with_protocol_v3(sctx);
