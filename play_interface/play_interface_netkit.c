@@ -356,7 +356,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
             RETURN_NULL();
         } else {
-            int message = sctx->read_buf_ncount - 41;
+            int message = sctx->read_buf_ncount - 45;
             char reponse_id[33];
             reponse_id[32] = 0;
 
@@ -367,7 +367,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
                 RETURN_NULL();
             }
 
-            ZVAL_STRINGL(return_value, sctx->read_buf+45, message);
+            ZVAL_STRINGL(return_value, sctx->read_buf+41, message);
             play_socket_cleanup_with_protocol(sctx);
         }
     }
