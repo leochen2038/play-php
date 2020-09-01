@@ -545,6 +545,8 @@ class Play\n\
 class NetKit\n\
 {\n\
     public static function socket_protocol($host, $port, $cmd, $data, $respond = true, $timeout = 1){}\n\
+    public static function socket_protocol_v2($callerId, $host, $port, $cmd, $data, $respond = true, $timeout = 1){}\n\
+    public static function socket_protocol_v3($host, $port, $cmd, $data, $callerId = 0, $tagId = 0, $respond = true, $timeout = 1){}\n\
     public static function socket_fastcgi($host, $port, $params, $body, $respond = true, $timeout = 1){}\n\
 }\
 ");
