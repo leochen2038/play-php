@@ -180,7 +180,10 @@ size_t socket_read(int socketfd, char *buffer, int length) {
             readCount += nread;
             continue;
         }
-        if (nread <= 0 && !(errno == EINTR || errno == EAGAIN)) {
+        if (nread == 0) {
+            return -1;
+        }
+        if (nread < 0 && !(errno == EINTR || errno == EAGAIN)) {
             return -1;
         }
     }
