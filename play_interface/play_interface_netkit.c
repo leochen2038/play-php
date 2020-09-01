@@ -360,7 +360,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
             char reponse_id[33];
             reponse_id[32] = 0;
 
-            memcpy(reponse_id, sctx->read_buf+9, 32);
+            memcpy(reponse_id, sctx->read_buf+5, 32);
             if (memcmp(reponse_id, request_id, 32) != 0) {
                 play_socket_cleanup_and_close(sctx, 1);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", request_id, reponse_id);
