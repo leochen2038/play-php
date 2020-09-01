@@ -356,7 +356,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
             RETURN_NULL();
         } else {
-            int message = sctx->read_buf_ncount - 45;
+            int message = sctx->read_buf_ncount - 41;
             char reponse_id[33];
             reponse_id[32] = 0;
 
