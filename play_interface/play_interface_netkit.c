@@ -301,6 +301,8 @@ PHP_METHOD(NetKit, socket_protocol_v3)
     long port = 0;
     long timeout = 0;
     unsigned char respond = 1;
+    char *traceId = NULL;
+    long spanId = 0;
     zval *host, *cmd, *message;
 
     #ifndef FAST_ZPP
@@ -345,10 +347,23 @@ PHP_METHOD(NetKit, socket_protocol_v3)
         RETURN_NULL();
     }
 
-    char request_id[33];
-    play_get_micro_uqid(request_id, sctx->local_ip_hex, getpid());
-    play_socket_send_with_protocol_v3(sctx, callerId, tagId, request_id, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
+    // get trackId
+    zval *zTraceId = zend_read_static_property(play_interface_action_ce, "trackId", 7, 1);
+    if (zTraceId == NULL || Z_STRLEN_P(zTraceId) == 0) {
+        char tmpTrackId[33] = {0};
+        play_get_micro_uqid(tmpTrackId, local_ip_hex, getpid());
+        zend_update_static_property_stringl(play_interface_action_ce, "trackId", 7, tmpTrackId , strlen(tmpTrackId));
+        zTraceId = zend_read_static_property(play_interface_action_ce, "trackId", 7, 1);
+    }
+    traceId = Z_STRVAL_P(zTraceId);
 
+    // get spanId
+    zval *zSpanId = zend_read_static_property(play_interface_action_ce, "spanId", 6, 1);
+    spanId = Z_LVAL_P(zSpanId);
+    spanId = spanId > 255 ? 255 : spanId + 1;
+    zend_update_static_property_long(play_interface_action_ce, "spanId", 6, spanId);
+
+    play_socket_send_with_protocol_v3(sctx, callerId, tagId, traceId, spanId, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
     if (respond) {
         result = play_socket_recv_with_protocol_v3(sctx);
         if (result < 0 || sctx->read_buf == NULL ) {
@@ -361,9 +376,9 @@ PHP_METHOD(NetKit, socket_protocol_v3)
             reponse_id[32] = 0;
 
             memcpy(reponse_id, sctx->read_buf+5, 32);
-            if (memcmp(reponse_id, request_id, 32) != 0) {
+            if (memcmp(reponse_id, traceId, 32) != 0) {
                 play_socket_cleanup_and_close(sctx, 1);
-                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", request_id, reponse_id);
+                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", traceId, reponse_id);
                 RETURN_NULL();
             }
 

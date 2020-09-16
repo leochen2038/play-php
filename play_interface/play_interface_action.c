@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <zend_interfaces.h>
 
+char local_ip_hex[9];
 zend_class_entry *play_interface_action_ce;
 static void play_interface_action_render(zval *obj);
 static void play_interface_action_run(play_action *act);
@@ -29,14 +30,27 @@ const zend_function_entry  play_interface_action_functions[] = {
 
 void play_interface_action_register(int _module_number)
 {
+    char **ip_piece;
+    char *host = play_get_intranet_ip();
+
+    if (host == NULL) {
+        host = "127.0.0.1";
+    }
+
+    memset(local_ip_hex, 0, 9);
+    play_explode(&ip_piece, host, '.');
+    snprintf(local_ip_hex, 9, "%02x%02x%02x%02x", atoi(ip_piece[0]), atoi(ip_piece[1]), atoi(ip_piece[2]), atoi(ip_piece[3]));
+
     zend_class_entry class;
     INIT_CLASS_ENTRY(class, "Action", play_interface_action_functions);
     play_interface_action_ce = zend_register_internal_class_ex(&class, NULL);
+    zend_declare_property_null(play_interface_action_ce, "trackId", 7, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
     zend_declare_property_null(play_interface_action_ce, "name", 4, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
     zend_declare_property_null(play_interface_action_ce, "render", 6, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
     zend_declare_property_null(play_interface_action_ce, "url", 3, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
     zend_declare_property_null(play_interface_action_ce, "template", 8, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
     zend_declare_property_null(play_interface_action_ce, "track", 5, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
+    zend_declare_property_long(play_interface_action_ce, "spanId", 6, 0, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC);
 }
 
 PHP_METHOD(Action, boot)
@@ -264,10 +278,15 @@ static void play_interface_action_update_property(const char *url, int urllen, c
         }
     }
 
+    char trackId[33] = {0};
+    play_get_micro_uqid(trackId, local_ip_hex, getpid());
+
     zend_update_static_property_stringl(play_interface_action_ce, "url", 3, url, urllen);
     zend_update_static_property_stringl(play_interface_action_ce, "name", 4, name, urllen);
     zend_update_static_property_stringl(play_interface_action_ce, "render", 6, render , render_len);
     zend_update_static_property_stringl(play_interface_action_ce, "template", 8, url , urllen);
+    zend_update_static_property_stringl(play_interface_action_ce, "trackId", 7, trackId , strlen(trackId));
+    zend_update_static_property_long(play_interface_action_ce, "spanId", 6, 0);
 }
 
 static void play_interface_action_get_uri_from_url(play_string **uri, play_string **render)

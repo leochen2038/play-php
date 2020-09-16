@@ -15,6 +15,11 @@
 #include <zconf.h>
 #include <sys/time.h>
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+
 //typedef struct _play_hitem_project_path {
 //    char path[128];
 //    char *play_string;
@@ -148,5 +153,30 @@ void play_get_micro_uqid(char *muqid, char *hexip, int pid)
     gettimeofday(&tval, NULL);
 
     p = localtime(&timep);
-    snprintf(muqid, 32, "%04d%02d%02d%02d%02d%02d%06d%s%04x\n", (1900 + p->tm_year), (p->tm_mon + 1), p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tval.tv_usec, hexip, pid%0x10000);
+    snprintf(muqid, 33, "100%02d%02d%02d%02d%02d%02d%05x%s%04x", (p->tm_year - 100), (p->tm_mon + 1), p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tval.tv_usec, hexip, pid%0x10000);
+}
+
+char * play_get_intranet_ip()
+{
+    struct ifaddrs *ifaddr, *ifa;
+    char *host = NULL;
+
+    if (getifaddrs(&ifaddr) == -1) {
+        return NULL;
+    }
+
+    for (ifa = ifaddr; ifa != NULL && ifa->ifa_addr != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            struct sockaddr_in *in = (struct sockaddr_in*)ifa->ifa_addr;
+            host = inet_ntoa(in->sin_addr);
+
+            if (memcmp(host, "192.168", 7) == 0) {
+                freeifaddrs(ifaddr);
+                return host;
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    return NULL;
 }

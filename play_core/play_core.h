@@ -134,6 +134,7 @@ play_meta_hashtable* play_manager_meta_get_list_by_path(char *path);
 int play_explode(char ***dest, const char *src, const char delim);
 int play_is_numeric(char *str);
 void play_get_micro_uqid(char *muqid, char *hexip, int pid);
+char * play_get_intranet_ip();
 void play_str_tolower_copy(char *dest, const char *source, int length);
 play_string *play_find_project_root_by_path(const char *path, int cache);
 
@@ -154,7 +155,7 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx);
 size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx);
 size_t play_socket_send_with_protocol_v1(play_socket_ctx *sctx, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
 size_t play_socket_send_with_protocol_v2(play_socket_ctx *sctx, unsigned short callerId, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
-size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
+size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *trace_id, char *span_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
 
 play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, int persisent);
 size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char *recv);

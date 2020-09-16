@@ -73,29 +73,32 @@ size_t play_socket_send_with_protocol_v2(play_socket_ctx *sctx, unsigned short c
     return ret;
 }
 
-size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond)
+size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *trace_id, char *span_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond)
 {
-    /* 协议：4个字节(==>协议头), 4个字节（数据长度）, 1个字节(协议版本), 4个字节(tagId), 32字节(请求唯一标识) | 4个字节(调用方ID), 1个字节(action长度), 1个字节(是否需要响应) , action, 内容 */
+    /* 协议：4个字节(==>协议头), 4个字节（数据长度）, 1个字节(协议版本), 4个字节(tagId), 32字节(traceId) 16字节(spanId) | 4个字节(调用方ID), 1个字节(action长度), 1个字节(是否需要响应) , action, 内容 */
     int ret = 0;
     char version = 0x03;
     int send_size = 51 + cmd_len + data_len;
     int data_size = send_size - 8;
     char send_data[send_size];
+    char fillZero[15] = {0};
 
     memcpy(send_data, "==>>", 4);
     memcpy(send_data+4, &data_size, 4);
     memcpy(send_data+8, &version, 1);
     memcpy(send_data+9, &tagId, 4);
-    memcpy(send_data+13, request_id, 32);
+    memcpy(send_data+13, trace_id, 32);
+    memcpy(send_data+45, &span_id, 1);
+    memcpy(send_data+46, fillZero, 15);
 
-    memcpy(send_data+45, &callerId, 4);
-    memcpy(send_data+49, &cmd_len, 1);
-    memcpy(send_data+50, &respond, 1);
+    memcpy(send_data+61, &callerId, 4);
+    memcpy(send_data+65, &cmd_len, 1);
+    memcpy(send_data+66, &respond, 1);
 
-    memcpy(send_data+51, cmd, cmd_len);
+    memcpy(send_data+67, cmd, cmd_len);
 
     if (data_len > 0) {
-        memcpy(send_data+51+cmd_len, data, data_len);
+        memcpy(send_data+67+cmd_len, data, data_len);
     }
 
     ret = send(sctx->socket_fd, send_data, send_size, 0);
@@ -110,7 +113,6 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx)
 {
     int size, rcount, result;
     char header[8];
-
     rcount = socket_read(sctx->socket_fd, header, 8);
     if (rcount < 1) {
         return -errno - 1000;
@@ -125,7 +127,6 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx)
     sctx->read_buf[size] = 0;
     sctx->read_buf_ncount = size;
     sctx->read_buf_rcount = 0;
-
     result = socket_read(sctx->socket_fd, sctx->read_buf, size);
     if (result != size) {
         return -2;
@@ -180,10 +181,10 @@ size_t socket_read(int socketfd, char *buffer, int length) {
             readCount += nread;
             continue;
         }
-        if (nread == 0) {
-            return -1;
-        }
-        if (nread < 0 && !(errno == EINTR || errno == EAGAIN)) {
+//        if (nread == 0) {
+//            return -1;
+//        }
+        if (nread <= 0 && !(errno == EINTR || errno == EAGAIN)) {
             return -1;
         }
     }

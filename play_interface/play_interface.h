@@ -23,6 +23,7 @@ int play_interface_utils_load_config(char *path, zval *result);
 
 
 /* play_interface_action.c */
+extern char local_ip_hex[9];
 extern zend_class_entry *play_interface_action_ce;
 void play_interface_action_register(int _module_number);
 
