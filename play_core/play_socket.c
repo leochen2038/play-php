@@ -73,23 +73,23 @@ size_t play_socket_send_with_protocol_v2(play_socket_ctx *sctx, unsigned short c
     return ret;
 }
 
-size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *trace_id, char *span_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond)
+size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *trace_id, int span_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond)
 {
     /* 协议：4个字节(==>协议头), 4个字节（数据长度）, 1个字节(协议版本), 4个字节(tagId), 32字节(traceId) 16字节(spanId) | 4个字节(调用方ID), 1个字节(action长度), 1个字节(是否需要响应) , action, 内容 */
     int ret = 0;
     char version = 0x03;
-    int send_size = 51 + cmd_len + data_len;
+    int send_size = 67 + cmd_len + data_len;
     int data_size = send_size - 8;
     char send_data[send_size];
-    char fillZero[15] = {0};
+    char fillZero[16] = {0};
+    fillZero[0] = (char)span_id;
 
     memcpy(send_data, "==>>", 4);
     memcpy(send_data+4, &data_size, 4);
     memcpy(send_data+8, &version, 1);
     memcpy(send_data+9, &tagId, 4);
     memcpy(send_data+13, trace_id, 32);
-    memcpy(send_data+45, &span_id, 1);
-    memcpy(send_data+46, fillZero, 15);
+    memcpy(send_data+45, fillZero, 16);
 
     memcpy(send_data+61, &callerId, 4);
     memcpy(send_data+65, &cmd_len, 1);
