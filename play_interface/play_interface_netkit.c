@@ -365,7 +365,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
 
     play_socket_send_with_protocol_v3(sctx, callerId, tagId, traceId, spanId, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
     if (respond) {
-        result = play_socket_recv_with_protocol_v3(sctx);
+        result = play_socket_recv_with_protocol_v3(sctx, timeout);
         if (result < 0 || sctx->read_buf == NULL ) {
             play_socket_cleanup_and_close(sctx, 1);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);

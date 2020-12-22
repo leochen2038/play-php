@@ -109,11 +109,11 @@ size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, in
     return ret;
 }
 
-size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx)
+size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, int timeout)
 {
     int size, rcount, result;
     char header[8];
-    rcount = socket_read(sctx->socket_fd, header, 8);
+    rcount = socket_read_timeout(sctx->socket_fd, header, 8, timeout);
     if (rcount < 1) {
         return -errno - 1000;
     }
@@ -127,7 +127,7 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx)
     sctx->read_buf[size] = 0;
     sctx->read_buf_ncount = size;
     sctx->read_buf_rcount = 0;
-    result = socket_read(sctx->socket_fd, sctx->read_buf, size);
+    result = socket_read_timeout(sctx->socket_fd, sctx->read_buf, size, timeout);
     if (result != size) {
         return -2;
     }
@@ -171,6 +171,33 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
     return 1;
 }
 
+size_t socket_read_timeout(int socketfd, char *buffer, int length, int timeout) {
+    int readCount = 0;
+    int nread = 0;
+    time_t start, current;
+    time(&start);
+
+    while (readCount < length) {
+        nread = recv(socketfd, buffer + readCount, length - readCount, MSG_WAITALL);
+        if (nread > 0) {
+            readCount += nread;
+            continue;
+        }
+
+        if (nread <= 0 && !(errno == EINTR || errno == EAGAIN)) {
+            return -1;
+        }
+        if (timeout > 0) {
+            time(&current);
+            if (current - start > timeout) {
+                return -2;
+            }
+        }
+    }
+
+    return readCount;
+}
+
 size_t socket_read(int socketfd, char *buffer, int length) {
     int readCount = 0;
     int nread = 0;
@@ -181,9 +208,7 @@ size_t socket_read(int socketfd, char *buffer, int length) {
             readCount += nread;
             continue;
         }
-//        if (nread == 0) {
-//            return -1;
-//        }
+
         if (nread <= 0 && !(errno == EINTR || errno == EAGAIN)) {
             return -1;
         }

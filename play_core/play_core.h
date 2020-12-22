@@ -152,7 +152,7 @@ typedef struct {
 } play_socket_ctx;
 
 size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx);
-size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx);
+size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, int timeout);
 size_t play_socket_send_with_protocol_v1(play_socket_ctx *sctx, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
 size_t play_socket_send_with_protocol_v2(play_socket_ctx *sctx, unsigned short callerId, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
 size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *trace_id, int span_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
@@ -162,6 +162,7 @@ size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char 
 void play_socket_cleanup_with_protocol(play_socket_ctx *sctx);
 void play_socket_cleanup_and_close(play_socket_ctx *sctx, int persisent);
 size_t socket_read(int socketfd, char *buffer, int length);
+size_t socket_read_timeout(int socketfd, char *buffer, int length, int timeout);
 
 
 /* play_fastcgi */
