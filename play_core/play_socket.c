@@ -104,7 +104,7 @@ size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, in
     ret = send(sctx->socket_fd, send_data, send_size, 0);
 
     if (ret != send_size) {
-        return ret;
+        return -errno-1000;
     }
     return ret;
 }
