@@ -341,7 +341,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
     }
 
     play_socket_ctx *sctx = NULL;
-    timeout = timeout > 0 ? timeout : 1;
+    timeout = timeout > 0 ? timeout : 3;
     if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
