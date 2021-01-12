@@ -10,9 +10,11 @@
 #include <zconf.h>
 #include "../play_lib/uthash/uthash.h"
 
-void debugLog(const char *str) {
+void debugLog(char *str) {
     FILE *fp = NULL;
     fp = fopen("/tmp/play-core.log", "a+");
+    int fd = fileno(fp);
+    fchmod(fd, 0777);
     fputs(str, fp);
     fclose(fp);
 }
@@ -89,6 +91,7 @@ size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, in
     int data_size = send_size - 8;
     char send_data[send_size];
     char fillZero[16] = {0};
+    char debug[1024] = {0};
     fillZero[0] = (char)span_id;
 
     memcpy(send_data, "==>>", 4);
@@ -109,8 +112,10 @@ size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, in
     }
 
     ret = send(sctx->socket_fd, send_data, send_size, 0);
-    debugLog(sprintf("send traceId:%s, ret:%d, errno:%d\n", trace_id, ret, errno));
+
     if (ret != send_size) {
+        sprintf(debug, "send traceId:%s, ret:%d, errno:%d\n", trace_id, ret, errno);
+        debugLog(debug);
         return -errno-1000;
     }
     return ret;
@@ -118,11 +123,14 @@ size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, in
 
 size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, int timeout)
 {
+    char debug[1024] = {0};
     int size, rcount, result;
     char header[8];
     rcount = socket_read_timeout(sctx->socket_fd, header, 8, timeout);
-    debugLog(sprintf("recv ret:%d, errno:%d\n", rcount, errno));
+
     if (rcount < 1) {
+        sprintf(debug, "recv ret:%d, errno:%d\n", rcount, errno);
+        debugLog(debug);
         return -errno - 1000;
     }
 
