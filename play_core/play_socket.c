@@ -109,7 +109,7 @@ size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, in
     }
 
     ret = send(sctx->socket_fd, send_data, send_size, 0);
-    debugLog(sprintf("send traceId:%s, ret:%d, errno:%d\n", trace_id, ret, errno))
+    debugLog(sprintf("send traceId:%s, ret:%d, errno:%d\n", trace_id, ret, errno));
     if (ret != send_size) {
         return -errno-1000;
     }
@@ -121,7 +121,7 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, int timeout)
     int size, rcount, result;
     char header[8];
     rcount = socket_read_timeout(sctx->socket_fd, header, 8, timeout);
-    debugLog(sprintf("recv ret:%d, errno:%d\n", rcount, errno))
+    debugLog(sprintf("recv ret:%d, errno:%d\n", rcount, errno));
     if (rcount < 1) {
         return -errno - 1000;
     }
