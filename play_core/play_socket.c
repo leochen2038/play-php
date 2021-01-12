@@ -112,25 +112,23 @@ size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, in
     }
 
     ret = send(sctx->socket_fd, send_data, send_size, 0);
-
+    sprintf(debug, "send traceId:%s, ret:%d, errno:%d\n", trace_id, ret, errno);
+    debugLog(debug);
     if (ret != send_size) {
-        sprintf(debug, "send traceId:%s, ret:%d, errno:%d\n", trace_id, ret, errno);
-        debugLog(debug);
         return -errno-1000;
     }
     return ret;
 }
 
-size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, int timeout)
+size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, int timeout)
 {
     char debug[1024] = {0};
     int size, rcount, result;
     char header[8];
     rcount = socket_read_timeout(sctx->socket_fd, header, 8, timeout);
-
+    sprintf(debug, "recv traceId:%s, ret:%d, errno:%d\n", trace_id, rcount, errno);
+    debugLog(debug);
     if (rcount < 1) {
-        sprintf(debug, "recv ret:%d, errno:%d\n", rcount, errno);
-        debugLog(debug);
         return -errno - 1000;
     }
 

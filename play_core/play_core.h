@@ -152,7 +152,7 @@ typedef struct {
 } play_socket_ctx;
 
 size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx);
-size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, int timeout);
+size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, int timeout);
 size_t play_socket_send_with_protocol_v1(play_socket_ctx *sctx, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
 size_t play_socket_send_with_protocol_v2(play_socket_ctx *sctx, unsigned short callerId, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
 size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *trace_id, int span_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);

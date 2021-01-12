@@ -370,7 +370,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
         RETURN_NULL();
     }
     if (respond) {
-        result = play_socket_recv_with_protocol_v3(sctx, timeout);
+        result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
         if (result < 0 || sctx->read_buf == NULL ) {
             play_socket_cleanup_and_close(sctx, 1);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
