@@ -286,13 +286,13 @@ play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, 
     if (persisent) {
         HASH_FIND_STR(socket_hashtable, cipv4, sctx);
         if (sctx != NULL) {
-            char recvdata[1024];
+//            char recvdata[1024];
             socket_fd = sctx->socket_fd;
             play_socket_cleanup_with_protocol(sctx);
-            while (recv(socket_fd, recvdata, 1024, MSG_DONTWAIT) > 0) {}
-            if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
-                needConnect = 0;
-            }
+//            while (recv(socket_fd, recvdata, 1024, MSG_DONTWAIT) > 0) {}
+//            if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
+//                needConnect = 0;
+//            }
         }
     }
 
