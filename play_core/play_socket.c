@@ -141,7 +141,8 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, 
     sctx->read_buf[size] = 0;
     sctx->read_buf_ncount = size;
     sctx->read_buf_rcount = 0;
-    result = socket_read_timeout(sctx->socket_fd, sctx->read_buf, size, timeout);
+    //result = socket_read_timeout(sctx->socket_fd, sctx->read_buf, size, timeout);
+    result = socket_read(sctx->socket_fd, sctx->read_buf, size);
     if (result != size) {
         return -2;
     }

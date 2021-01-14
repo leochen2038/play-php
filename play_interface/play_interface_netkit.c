@@ -342,7 +342,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
 
     play_socket_ctx *sctx = NULL;
     timeout = timeout > 0 ? timeout : 1;
-    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
+    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 0)) == NULL) {
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
     }
@@ -371,22 +371,22 @@ PHP_METHOD(NetKit, socket_protocol_v3)
     }
     if (respond) {
         result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
-        if (result == -1011) {
-            play_socket_cleanup_and_close(sctx, 1);
-            if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
-                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
-                RETURN_NULL();
-            }
-            result = play_socket_send_with_protocol_v3(sctx, callerId, tagId, traceId, spanId, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
-            if (result < 0) {
-                play_socket_cleanup_and_close(sctx, 1);
-                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "send error:%d", result);
-                RETURN_NULL();
-            }
-            result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
-        }
+//        if (result == -1011) {
+//            play_socket_cleanup_and_close(sctx, 1);
+//            if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
+//                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
+//                RETURN_NULL();
+//            }
+//            result = play_socket_send_with_protocol_v3(sctx, callerId, tagId, traceId, spanId, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
+//            if (result < 0) {
+//                play_socket_cleanup_and_close(sctx, 1);
+//                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "send error:%d", result);
+//                RETURN_NULL();
+//            }
+//            result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
+//        }
         if (result < 0 || sctx->read_buf == NULL ) {
-            play_socket_cleanup_and_close(sctx, 1);
+            play_socket_cleanup_and_close(sctx, 0);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
             RETURN_NULL();
         } else {
@@ -396,15 +396,16 @@ PHP_METHOD(NetKit, socket_protocol_v3)
 
             memcpy(reponse_id, sctx->read_buf+5, 32);
             if (memcmp(reponse_id, traceId, 32) != 0) {
-                play_socket_cleanup_and_close(sctx, 1);
+                play_socket_cleanup_and_close(sctx, 0);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", traceId, reponse_id);
                 RETURN_NULL();
             }
 
             ZVAL_STRINGL(return_value, sctx->read_buf+41, message);
-            play_socket_cleanup_with_protocol(sctx);
+            //play_socket_cleanup_with_protocol(sctx);
         }
     }
+    play_socket_cleanup_and_close(sctx, 0);
 }
 
 //PHP_METHOD(NetKit, nativesocket)
