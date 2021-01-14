@@ -125,7 +125,8 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, 
     char debug[1024] = {0};
     int size, rcount, result;
     char header[8];
-    rcount = socket_read_timeout(sctx->socket_fd, header, 8, timeout);
+    rcount = socket_read(sctx->socket_fd, header, 8,);
+    //rcount = socket_read_timeout(sctx->socket_fd, header, 8, timeout);
 //    sprintf(debug, "recv traceId:%s, ret:%d, errno:%d\n", trace_id, rcount, errno);
 //    debugLog(debug);
     if (rcount < 1) {
