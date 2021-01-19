@@ -1,8 +1,6 @@
 //
 // Created by Leo on 2018/10/16.
 //
-
-
 #include "../play_core/play_core.h"
 #include "play_interface.h"
 #include <stdio.h>
@@ -84,7 +82,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
     }
 
     if (play_fastcgi_start_request(client) != 0) {
-        play_socket_cleanup_and_close(client, 0);
+        play_socket_cleanup_and_close(client);
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not send start request to %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
     }
@@ -94,7 +92,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
         z_item = zend_hash_get_current_data(Z_ARRVAL_P(params));
         zend_hash_get_current_key(Z_ARRVAL_P(params), &z_key, &idx);
         if (play_fastcgi_set_param(client, z_key->val, z_key->len, Z_STRVAL_P(z_item), Z_STRLEN_P(z_item)) != 0 ) {
-            play_socket_cleanup_and_close(client, 0);
+            play_socket_cleanup_and_close(client);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not send param to %s:%d", Z_STRVAL_P(host), port);
             RETURN_NULL();
         }
@@ -102,12 +100,12 @@ PHP_METHOD(NetKit, socket_fastcgi)
     }
 
     if (play_fastcgi_end_request(client) != 0) {
-        play_socket_cleanup_and_close(client, 0);
+        play_socket_cleanup_and_close(client);
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not send end request to %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
     }
     if (Z_STRLEN_P(body) > 0 && play_fastcgi_set_boby(client, Z_STRVAL_P(body), Z_STRLEN_P(body)) != 0) {
-        play_socket_cleanup_and_close(client, 0);
+        play_socket_cleanup_and_close(client);
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not send body to %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
     }
@@ -116,7 +114,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
         int response_size = 0;
         char *response = NULL;
         response = play_fastcgi_get_response(client, &response_size);
-        play_socket_cleanup_and_close(client, 0);
+        play_socket_cleanup_and_close(client);
         if (response == NULL && response_size == 0) {
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "NetKit::socket_fastcgi() can not get response from %s:%d", Z_STRVAL_P(host), port);
             RETURN_NULL();
@@ -125,7 +123,7 @@ PHP_METHOD(NetKit, socket_fastcgi)
         ZVAL_STRINGL(return_value, response + i, response_size - i);
         free(response);
     } else {
-        play_socket_cleanup_and_close(client, 0);
+        play_socket_cleanup_and_close(client);
     }
 }
 
@@ -179,7 +177,7 @@ PHP_METHOD(NetKit, socket_protocol)
     if (respond) {
         result = play_socket_recv_with_protocol_v1(sctx);
         if (result < 0 || sctx->read_buf == NULL ) {
-            play_socket_cleanup_and_close(sctx, 1);
+            play_socket_cleanup_and_close(sctx);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
             RETURN_NULL();
         } else {
@@ -189,14 +187,15 @@ PHP_METHOD(NetKit, socket_protocol)
 
             memcpy(&data_len, sctx->read_buf+1, 4);
             memcpy(reponse_id, sctx->read_buf+5, 32);
+
             if (memcmp(reponse_id, request_id, 32) != 0) {
-                play_socket_cleanup_and_close(sctx, 1);
+                play_socket_cleanup_and_close(sctx);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", request_id, reponse_id);
                 RETURN_NULL();
             }
 
             if (data_len > sctx->read_buf_ncount) {
-                play_socket_cleanup_and_close(sctx, 1);
+                play_socket_cleanup_and_close(sctx);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "data len error:%d, %d", data_len, sctx->read_buf_ncount);
                 RETURN_NULL();
             }
@@ -264,7 +263,7 @@ PHP_METHOD(NetKit, socket_protocol_v2)
     if (respond) {
         result = play_socket_recv_with_protocol_v1(sctx);
         if (result < 0 || sctx->read_buf == NULL ) {
-            play_socket_cleanup_and_close(sctx, 1);
+            play_socket_cleanup_and_close(sctx);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
             RETURN_NULL();
         } else {
@@ -275,13 +274,13 @@ PHP_METHOD(NetKit, socket_protocol_v2)
             memcpy(&data_len, sctx->read_buf+1, 4);
             memcpy(reponse_id, sctx->read_buf+5, 32);
             if (memcmp(reponse_id, request_id, 32) != 0) {
-                play_socket_cleanup_and_close(sctx, 1);
+                play_socket_cleanup_and_close(sctx);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", request_id, reponse_id);
                 RETURN_NULL();
             }
 
             if (data_len > sctx->read_buf_ncount) {
-                play_socket_cleanup_and_close(sctx, 1);
+                play_socket_cleanup_and_close(sctx);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "data len error:%d, %d", data_len, sctx->read_buf_ncount);
                 RETURN_NULL();
             }
@@ -342,7 +341,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
 
     play_socket_ctx *sctx = NULL;
     timeout = timeout > 0 ? timeout : 1;
-    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 0)) == NULL) {
+    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
     }
@@ -365,28 +364,14 @@ PHP_METHOD(NetKit, socket_protocol_v3)
 
     result = play_socket_send_with_protocol_v3(sctx, callerId, tagId, traceId, spanId, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
     if (result < 0) {
-        play_socket_cleanup_and_close(sctx, 1);
+        play_socket_cleanup_and_close(sctx);
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "send error:%d", result);
         RETURN_NULL();
     }
     if (respond) {
         result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
-//        if (result == -1011) {
-//            play_socket_cleanup_and_close(sctx, 1);
-//            if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
-//                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
-//                RETURN_NULL();
-//            }
-//            result = play_socket_send_with_protocol_v3(sctx, callerId, tagId, traceId, spanId, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
-//            if (result < 0) {
-//                play_socket_cleanup_and_close(sctx, 1);
-//                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "send error:%d", result);
-//                RETURN_NULL();
-//            }
-//            result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
-//        }
         if (result < 0 || sctx->read_buf == NULL ) {
-            play_socket_cleanup_and_close(sctx, 0);
+            play_socket_cleanup_and_close(sctx);
             play_interface_utils_trigger_exception(PLAY_ERR_BASE, "response error:%d", result);
             RETURN_NULL();
         } else {
@@ -396,29 +381,77 @@ PHP_METHOD(NetKit, socket_protocol_v3)
 
             memcpy(reponse_id, sctx->read_buf+5, 32);
             if (memcmp(reponse_id, traceId, 32) != 0) {
-                play_socket_cleanup_and_close(sctx, 0);
+                play_socket_cleanup_and_close(sctx);
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "reponse_id != request_id %s:%s", traceId, reponse_id);
                 RETURN_NULL();
             }
 
             ZVAL_STRINGL(return_value, sctx->read_buf+41, message);
-            //play_socket_cleanup_with_protocol(sctx);
+            play_socket_cleanup_with_protocol(sctx);
         }
     }
-    play_socket_cleanup_and_close(sctx, 0);
 }
 
 //PHP_METHOD(NetKit, nativesocket)
 //{
-//    char *host = NULL;
+//    char *persistent_id = NULL;
+//    int tcp_keepalive = 0;
+//    int tcp_flag = 1;
+//    struct timeval tv, read_tv, *tv_ptr = NULL;
+//    php_stream     *stream;
 //    char *message = NULL;
 //    long port;
 //    long timeout = 0;
-//    int hostLen, messageLen;
-//
-//    if (zend_parse_parameters(ZEND_NUM_ARGS(), "sls|l", &host, &hostLen, &port, &message, &messageLen, &timeout) == FAILURE) {
+//    int messageLen;
+//    zend_string *estr = NULL;
+//    php_netstream_data_t *sock;
+//    zval *host;
+//    int err = 0;
+//    int host_len;
+//    if (zend_parse_parameters(ZEND_NUM_ARGS(), "zls|l", &host, &port, &message, &messageLen, &timeout) == FAILURE) {
 //        return;
 //    }
+//
+//    spprintf(&persistent_id, 0, "playsocket:%s", Z_STRVAL_P(host));
+//
+//    tv.tv_sec  = (time_t)timeout;
+//    tv.tv_usec = (int)((timeout - tv.tv_sec) * 1000000);
+//    if(tv.tv_sec != 0 || tv.tv_usec != 0) {
+//        tv_ptr = &tv;
+//    }
+//
+//    read_tv.tv_sec  = (time_t)timeout;
+//    read_tv.tv_usec = (int)((timeout-read_tv.tv_sec)*1000000);
+//
+//    stream = php_stream_xport_create(Z_STRVAL_P(host), Z_STRLEN_P(host), 0, STREAM_XPORT_CLIENT | STREAM_XPORT_CONNECT, persistent_id, tv_ptr, NULL, &estr, &err);
+//
+//    if (persistent_id) {
+//        efree(persistent_id);
+//    }
+//
+//    if (!stream) {
+//        if (estr) {
+//            zend_string_release(estr);
+//            printf("%s", ZSTR_VAL(estr));
+//        }
+//        return;
+//    }
+//
+//    sock = (php_netstream_data_t*)stream->abstract;
+//    err = setsockopt(sock->socket, IPPROTO_TCP, TCP_NODELAY, (char*) &tcp_flag, sizeof(tcp_flag));
+//    PHPREDIS_NOTUSED(err);
+//    err = setsockopt(sock->socket, SOL_SOCKET, SO_KEEPALIVE, (char*) &tcp_keepalive, sizeof(tcp_keepalive));
+//    PHPREDIS_NOTUSED(err);
+//
+//    //php_stream_auto_cleanup(stream);
+//
+//    if (read_tv.tv_sec != 0 || read_tv.tv_usec != 0) {
+//        php_stream_set_option(stream,PHP_STREAM_OPTION_READ_TIMEOUT, 0, &read_tv);
+//    }
+//    php_stream_set_option(stream, PHP_STREAM_OPTION_WRITE_BUFFER, PHP_STREAM_BUFFER_NONE, NULL);
+
+
+
 //
 //    int sockfd;
 //    long ret;

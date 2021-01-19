@@ -10,6 +10,9 @@
 #include <zconf.h>
 #include "../play_lib/uthash/uthash.h"
 
+#define PLAYSOCKET_NOTUSED(v) ((void)v)
+
+
 //void debugLog(char *str) {
 //    FILE *fp = NULL;
 //    fp = fopen("/tmp/play-core.log", "a+");
@@ -42,11 +45,10 @@ size_t play_socket_send_with_protocol_v1(play_socket_ctx *sctx, char *request_id
         memcpy(send_data+47+cmd_len, data, data_len);
     }
 
-    ret = send(sctx->socket_fd, send_data, send_size, 0);
+    ret = php_stream_write(sctx->stream, send_data, send_size);
 
     if (ret != send_size) {
-        // php_printf("send error\n");
-        return ret;
+        return -ret-1000;
     }
     return ret;
 }
@@ -74,10 +76,10 @@ size_t play_socket_send_with_protocol_v2(play_socket_ctx *sctx, unsigned short c
         memcpy(send_data+49+cmd_len, data, data_len);
     }
 
-    ret = send(sctx->socket_fd, send_data, send_size, 0);
+    ret = php_stream_write(sctx->stream, send_data, send_size);
 
     if (ret != send_size) {
-        return ret;
+        return -ret-1000;
     }
     return ret;
 }
@@ -111,41 +113,35 @@ size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, in
         memcpy(send_data+67+cmd_len, data, data_len);
     }
 
-    ret = send(sctx->socket_fd, send_data, send_size, 0);
-//    sprintf(debug, "send traceId:%s, ret:%d, errno:%d\n", trace_id, ret, errno);
-//    debugLog(debug);
+    ret = php_stream_write(sctx->stream, send_data, send_size);
+
     if (ret != send_size) {
-        return -errno-1000;
+        return -ret-1000;
     }
     return ret;
 }
 
 size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, int timeout)
 {
-    char debug[1024] = {0};
-    int size, rcount, result;
+    int size, rcount;
     char header[8];
-    rcount = socket_read(sctx->socket_fd, header, 8);
-    //rcount = socket_read_timeout(sctx->socket_fd, header, 8, timeout);
-//    sprintf(debug, "recv traceId:%s, ret:%d, errno:%d\n", trace_id, rcount, errno);
-//    debugLog(debug);
+    rcount = php_stream_read(sctx->stream, header, 8);
     if (rcount < 1) {
-        return -errno - 1000;
-    }
-
-    if (memcmp(header, "<<==", 4) != 0) {
         return -1;
     }
 
+    if (memcmp(header, "<<==", 4) != 0) {
+        return -2;
+    }
+
     memcpy(&size, header+4, 4);
-    sctx->read_buf = malloc(size+1);
+    sctx->read_buf = emalloc(size+1);
     sctx->read_buf[size] = 0;
     sctx->read_buf_ncount = size;
     sctx->read_buf_rcount = 0;
-    //result = socket_read_timeout(sctx->socket_fd, sctx->read_buf, size, timeout);
-    result = socket_read(sctx->socket_fd, sctx->read_buf, size);
-    if (result != size) {
-        return -2;
+    rcount = php_stream_read(sctx->stream, sctx->read_buf, size);
+    if (rcount != size) {
+        return -3;
     }
     return 1;
 }
@@ -153,7 +149,7 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, 
 void play_socket_cleanup_with_protocol(play_socket_ctx *sctx)
 {
     if (sctx->read_buf != NULL) {
-        free(sctx->read_buf);
+        efree(sctx->read_buf);
         sctx->read_buf = NULL;
         sctx->read_buf_ncount = 0;
         sctx->read_buf_rcount = 0;
@@ -162,16 +158,16 @@ void play_socket_cleanup_with_protocol(play_socket_ctx *sctx)
 
 size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
 {
-    int size, rcount, result;
+    int size, rcount;
     char header[8];
 
     rcount = socket_read(sctx->socket_fd, header, 8);
     if (rcount < 1) {
-        return -errno - 1000;
+        return -1;
     }
 
     if (memcmp(header, "==>>", 4) != 0) {
-        return -1;
+        return -2;
     }
 
     memcpy(&size, header+4, 4);
@@ -180,9 +176,9 @@ size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx)
     sctx->read_buf_ncount = size;
     sctx->read_buf_rcount = 0;
 
-    result = socket_read(sctx->socket_fd, sctx->read_buf, size);
-    if (result != size) {
-        return -2;
+    rcount = php_stream_read(sctx->stream, sctx->read_buf, size);
+    if (rcount != size) {
+        return -3;
     }
     return 1;
 }
@@ -276,81 +272,81 @@ size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char 
     return 0;
 }
 
-play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, int persisent)
+php_stream *play_socket_stream(const char *host, int host_len, int timeout, int persistent, char *persistent_id)
 {
-    int needConnect = 1;
-    char cipv4[21];
-    char checkSocket;
-    int socket_fd = 0;
-    play_socket_ctx *sctx = NULL;
+    int err = 0;
+    int tcp_keepalive = 0;
+    int tcp_flag = 1;
 
-    snprintf(cipv4, 21, "%s:%d", host, port);
-    if (persisent) {
-        HASH_FIND_STR(socket_hashtable, cipv4, sctx);
-        if (sctx != NULL) {
-//            char recvdata[1024];
-            socket_fd = sctx->socket_fd;
-            play_socket_cleanup_with_protocol(sctx);
-//            while (recv(socket_fd, recvdata, 1024, MSG_DONTWAIT) > 0) {}
-//            if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
-//                needConnect = 0;
-//            }
-        }
+    struct timeval tv, read_tv, *tv_ptr = NULL;
+    php_stream  *stream;
+    php_netstream_data_t *sock;
+
+    tv.tv_sec  = (time_t)timeout;
+    tv.tv_usec = (int)((timeout - tv.tv_sec) * 1000000);
+    if(tv.tv_sec != 0 || tv.tv_usec != 0) {
+        tv_ptr = &tv;
     }
 
-    if (needConnect == 1) {
-        struct sockaddr_in servaddr;
-        if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
-            // printf("创建网络连接失败, socket error!\n");
-            return NULL;
-        };
-
-        bzero(&servaddr, sizeof(servaddr));
-        servaddr.sin_family = AF_INET;
-        servaddr.sin_port = htons(port);
-        if (inet_pton(AF_INET, host, &servaddr.sin_addr) <= 0 ) {
-            // php_printf("创建网络连接失败, inet_pton error!\n");
-            return NULL;
-        }
-
-        if (connect(socket_fd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
-            // php_printf("连接到服务器失败, connect error!\n");
-            return NULL;
-        }
-
-        if (sctx == NULL) {
-            char **ip_piece;
-            char *local_ip = inet_ntoa(servaddr.sin_addr);
-            play_explode(&ip_piece, local_ip, '.');
-
-            sctx = (play_socket_ctx *) calloc(1, sizeof *sctx);
-            strcpy(sctx->ipv4, cipv4);
-            snprintf(sctx->local_ip_hex, 9, "%02x%02x%02x%02x", atoi(ip_piece[0]), atoi(ip_piece[1]), atoi(ip_piece[2]), atoi(ip_piece[3]));
-        }
-
-        sctx->socket_fd = socket_fd;
-        if (persisent) {
-            HASH_ADD_STR(socket_hashtable, ipv4, sctx);
-        }
+    read_tv.tv_sec  = (time_t)timeout;
+    read_tv.tv_usec = (int)((timeout-read_tv.tv_sec)*1000000);
+    if (persistent == 1) {
+        stream = php_stream_xport_create(host, host_len, 0, STREAM_XPORT_CLIENT | STREAM_XPORT_CONNECT, persistent_id,
+                                         tv_ptr, NULL, NULL, NULL);
+    } else {
+        stream = php_stream_xport_create(host, host_len, 0, STREAM_XPORT_CLIENT | STREAM_XPORT_CONNECT, NULL,
+                                         tv_ptr, NULL, NULL, NULL);
     }
 
-    // 设置超时时间
-    if (wait_time > 0) {
-        struct timeval timeout = {wait_time, 0};
-        setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-        setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+    if (!stream) {
+        return NULL;
+    }
+
+    sock = (php_netstream_data_t*)stream->abstract;
+    err = setsockopt(sock->socket, IPPROTO_TCP, TCP_NODELAY, (char*) &tcp_flag, sizeof(tcp_flag));
+    PLAYSOCKET_NOTUSED(err);
+    err = setsockopt(sock->socket, SOL_SOCKET, SO_KEEPALIVE, (char*) &tcp_keepalive, sizeof(tcp_keepalive));
+    PLAYSOCKET_NOTUSED(err);
+
+    php_stream_auto_cleanup(stream);
+
+    if (read_tv.tv_sec != 0 || read_tv.tv_usec != 0) {
+        php_stream_set_option(stream,PHP_STREAM_OPTION_READ_TIMEOUT, 0, &read_tv);
+    }
+    php_stream_set_option(stream, PHP_STREAM_OPTION_WRITE_BUFFER, PHP_STREAM_BUFFER_NONE, NULL);
+
+    return stream;
+}
+
+play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, int persistent)
+{
+    char ipv4[22] = {0};
+    play_socket_ctx *sctx = (play_socket_ctx *) calloc(1, sizeof *sctx);
+    sctx->persistent = 0;
+    if (persistent == 1) {
+        sctx->persistent = 1;
+        snprintf(sctx->persistent_id, 32, "playsocket:%s:%d", host, port);
+    }
+    snprintf(ipv4, 21, "%s:%d", host, port);
+
+    sctx->stream = play_socket_stream(ipv4, strlen(ipv4), wait_time, sctx->persistent, sctx->persistent_id);
+    if (sctx->stream == NULL) {
+        free(sctx);
+        sctx = NULL;
     }
     return sctx;
 }
 
-void play_socket_cleanup_and_close(play_socket_ctx *sctx, int persisent)
+void play_socket_cleanup_and_close(play_socket_ctx *sctx)
 {
-    if (persisent) {
-        HASH_DEL(socket_hashtable, sctx);
+    if (sctx->persistent) {
+        php_stream_pclose(sctx->stream);
+    } else {
+        php_stream_close(sctx->stream);
     }
-    close(sctx->socket_fd);
+
     if (sctx->read_buf != NULL) {
-        free(sctx->read_buf);
+        efree(sctx->read_buf);
     }
     free(sctx);
 }

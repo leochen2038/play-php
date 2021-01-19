@@ -6,6 +6,7 @@
 #define PROJECT_PLAY_CORE_H
 
 #include <zend_interfaces.h>
+#include <php_network.h>
 #include "../play_lib/uthash/uthash.h"
 
 /* play_string.c */
@@ -138,17 +139,17 @@ char * play_get_intranet_ip();
 void play_str_tolower_copy(char *dest, const char *source, int length);
 play_string *play_find_project_root_by_path(const char *path, int cache);
 
-
 /* play_socket */
 typedef struct {
-    char ipv4[21];
-    int socket_fd;
+    php_stream *stream;
+    int persistent;
+    char persistent_id[32];
     char local_ip_hex[9];
     char *read_buf;
+    int socket_fd;
     int state;                      /* 状态,0,正常可用，1：关闭*/
     unsigned int read_buf_ncount;   /* 需要读取的字节数 */
     unsigned int read_buf_rcount;   /* 实际读取的字节数 */
-    UT_hash_handle hh;
 } play_socket_ctx;
 
 size_t play_socket_recv_with_protocol_v1(play_socket_ctx *sctx);
@@ -157,10 +158,13 @@ size_t play_socket_send_with_protocol_v1(play_socket_ctx *sctx, char *request_id
 size_t play_socket_send_with_protocol_v2(play_socket_ctx *sctx, unsigned short callerId, char *request_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
 size_t play_socket_send_with_protocol_v3(play_socket_ctx *sctx, int callerId, int tagId, char *trace_id, int span_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
 
-play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, int persisent);
+size_t play_socket_send_with_protocol_stream(php_stream *stream, int callerId, int tagId, char *trace_id, int span_id, const char *cmd, int cmd_len, const char *data, int data_len, char respond);
+char * play_socket_recv_with_protocol_stream(php_stream *stream, char *trace_id, int timeout);
+
+play_socket_ctx *play_socket_connect(const char *host, int port, int wait_time, int persistent);
 size_t play_socket_send_recv(int socket_fd, const char *send, int sendlen, char *recv);
 void play_socket_cleanup_with_protocol(play_socket_ctx *sctx);
-void play_socket_cleanup_and_close(play_socket_ctx *sctx, int persisent);
+void play_socket_cleanup_and_close(play_socket_ctx *sctx);
 size_t socket_read(int socketfd, char *buffer, int length);
 size_t socket_read_timeout(int socketfd, char *buffer, int length, int timeout);
 
