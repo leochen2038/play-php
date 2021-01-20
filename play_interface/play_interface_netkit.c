@@ -371,7 +371,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
     if (respond) {
         result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
         // try agent
-        if result < 0 {
+        if (result < 0) {
             play_socket_cleanup_and_close(sctx);
             if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
                 play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
