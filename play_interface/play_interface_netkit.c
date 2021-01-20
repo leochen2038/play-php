@@ -341,7 +341,7 @@ PHP_METHOD(NetKit, socket_protocol_v3)
 
     play_socket_ctx *sctx = NULL;
     timeout = timeout > 0 ? timeout : 1;
-    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
+    if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 0)) == NULL) {
         play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
         RETURN_NULL();
     }
@@ -371,20 +371,20 @@ PHP_METHOD(NetKit, socket_protocol_v3)
     if (respond) {
         result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
         // try agent
-        if (result < 0) {
-            play_socket_cleanup_and_close(sctx);
-            if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
-                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
-                RETURN_NULL();
-            }
-            result = play_socket_send_with_protocol_v3(sctx, callerId, tagId, traceId, spanId, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
-            if (result < 0) {
-                play_socket_cleanup_and_close(sctx);
-                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "send agent error:%d", result);
-                RETURN_NULL();
-            }
-            result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
-        }
+//        if (result < 0) {
+//            play_socket_cleanup_and_close(sctx);
+//            if ((sctx = play_socket_connect(Z_STRVAL_P(host), port, timeout, 1)) == NULL) {
+//                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "can not connect %s:%d", Z_STRVAL_P(host), port);
+//                RETURN_NULL();
+//            }
+//            result = play_socket_send_with_protocol_v3(sctx, callerId, tagId, traceId, spanId, Z_STRVAL_P(cmd), Z_STRLEN_P(cmd), Z_STRVAL_P(message), Z_STRLEN_P(message), respond);
+//            if (result < 0) {
+//                play_socket_cleanup_and_close(sctx);
+//                play_interface_utils_trigger_exception(PLAY_ERR_BASE, "send agent error:%d", result);
+//                RETURN_NULL();
+//            }
+//            result = play_socket_recv_with_protocol_v3(sctx, traceId, timeout);
+//        }
 
         if (result < 0 || sctx->read_buf == NULL ) {
             play_socket_cleanup_and_close(sctx);
