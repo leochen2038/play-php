@@ -140,7 +140,7 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, 
     sctx->read_buf_ncount = size;
     sctx->read_buf_rcount = 0;
     if (php_stream_eof(sctx->stream) != 0) {
-        return -3
+        return -3;
     }
 
     rcount = php_stream_read(sctx->stream, sctx->read_buf, size);
