@@ -131,7 +131,7 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, 
 
     rcount = php_stream_read(sctx->stream, header, 8);
     if (rcount < 1) {
-        return -1000+rcount;
+        return -2000+rcount;
     }
 
     if (memcmp(header, "<<==", 4) != 0) {
@@ -146,7 +146,7 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, 
 
     rcount = php_stream_read(sctx->stream, sctx->read_buf, size);
     if (rcount != size) {
-        return -10000-rcount;
+        return -30000-rcount;
     }
 
     return 1;
