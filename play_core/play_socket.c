@@ -125,9 +125,13 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, 
 {
     int size, rcount;
     char header[8];
+    if (php_stream_eof(sctx->stream) != 0) {
+        return -1000;
+    }
+
     rcount = php_stream_read(sctx->stream, header, 8);
     if (rcount < 1) {
-        return -1;
+        return -1000+rcount;
     }
 
     if (memcmp(header, "<<==", 4) != 0) {
@@ -139,14 +143,12 @@ size_t play_socket_recv_with_protocol_v3(play_socket_ctx *sctx, char *trace_id, 
     sctx->read_buf[size] = 0;
     sctx->read_buf_ncount = size;
     sctx->read_buf_rcount = 0;
-    if (php_stream_eof(sctx->stream) != 0) {
-        return -3;
-    }
 
     rcount = php_stream_read(sctx->stream, sctx->read_buf, size);
     if (rcount != size) {
-        return -4;
+        return -10000-rcount;
     }
+
     return 1;
 }
 
